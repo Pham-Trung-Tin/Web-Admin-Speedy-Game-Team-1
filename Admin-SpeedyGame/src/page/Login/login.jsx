@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './login.css'
 
 const Login = () => {
@@ -6,6 +7,7 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -18,8 +20,11 @@ const Login = () => {
       // Handle login logic here
       console.log('Login attempt:', { username, password })
       
-      // You can add your authentication logic here
-      // For example: await authService.login(username, password)
+      // Simulate successful login
+      if (username && password) {
+        // Redirect to admin dashboard
+        navigate('/admin')
+      }
       
     } catch (error) {
       console.error('Login failed:', error)
