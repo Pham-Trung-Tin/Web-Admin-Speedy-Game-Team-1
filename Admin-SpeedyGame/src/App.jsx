@@ -1,16 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import GamesManagement from './pages/GamesManagement'
-function App() {
-  
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Login from './page/Login/login'
+import Admin from './page/Admin/Admin'
+import './App.css'
 
+function App() {
   return (
-    <>
-        <div>
-             <GamesManagement />
-        </div>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
