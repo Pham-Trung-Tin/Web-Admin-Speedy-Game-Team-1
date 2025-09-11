@@ -1,45 +1,51 @@
-import React from 'react';
+const games = [
+  { id: "#001", name: "Cyber Warriors", genre: "Action", status: "Active", players: 45231, release: "Jan 15, 2025" },
+  { id: "#002", name: "Mind Bender", genre: "Puzzle", status: "Active", players: 23458, release: "Dec 20, 2024" },
+  { id: "#003", name: "Dragon Quest Online", genre: "RPG", status: "Maintenance", players: 67890, release: "Nov 05, 2024" },
+  { id: "#004", name: "Soccer Champions", genre: "Sports", status: "Inactive", players: 12345, release: "Oct 12, 2024" },
+  { id: "#005", name: "Strategic Empire", genre: "Strategy", status: "Active", players: 34567, release: "Sep 28, 2024" },
+];
 
-const GameTable = ({ games }) => {
+const GameTable = () => {
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
-      <table className="w-full">
+    <div className="bg-gray-800 rounded-xl p-6 shadow-md">
+      <h3 className="text-lg font-semibold mb-4">Game List</h3>
+      <table className="w-full text-left text-gray-300">
         <thead>
-          <tr className="bg-gray-700 text-left">
-            <th className="p-2">Game Name</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Category</th>
-            <th className="p-2">Players</th>
-            <th className="p-2">Created Date</th>
-            <th className="p-2">Actions</th>
+          <tr>
+            <th className="pb-2">ID</th>
+            <th className="pb-2">Game</th>
+            <th className="pb-2">Genre</th>
+            <th className="pb-2">Status</th>
+            <th className="pb-2">Players</th>
+            <th className="pb-2">Release</th>
           </tr>
         </thead>
         <tbody>
           {games.map((game, index) => (
-            <tr key={index} className="border-t border-gray-700">
-              <td className="p-2">{game.name}</td>
-              <td className={`p-2 ${game.status === 'Inactive' ? 'text-gray-500' : ''}`}>{game.status}</td>
-              <td className="p-2">{game.category}</td>
-              <td className="p-2">{game.players.toLocaleString()}</td>
-              <td className="p-2">{game.createdDate}</td>
-              <td className="p-2">
-                <button className="text-blue-400 mr-2">✎</button>
-                <button className="text-red-400">✖</button>
+            <tr key={index} className="hover:bg-gray-700">
+              <td className="py-2">{game.id}</td>
+              <td>{game.name}</td>
+              <td>{game.genre}</td>
+              <td>
+                <span
+                  className={`px-2 py-1 rounded text-sm ${
+                    game.status === "Active"
+                      ? "bg-green-600"
+                      : game.status === "Inactive"
+                      ? "bg-red-600"
+                      : "bg-yellow-600"
+                  }`}
+                >
+                  {game.status}
+                </span>
               </td>
+              <td>{game.players.toLocaleString()}</td>
+              <td>{game.release}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="p-2 text-gray-500 text-sm">
-        Showing 1 to 5 of 248 entries
-      </div>
-      <div className="p-2 flex justify-end">
-        <button className="px-2 py-1 bg-gray-700 rounded">Previous</button>
-        <button className="px-2 py-1 bg-gray-700 rounded mx-1">1</button>
-        <button className="px-2 py-1 bg-gray-700 rounded">2</button>
-        <button className="px-2 py-1 bg-gray-700 rounded">3</button>
-        <button className="px-2 py-1 bg-gray-700 rounded">Next</button>
-      </div>
     </div>
   );
 };

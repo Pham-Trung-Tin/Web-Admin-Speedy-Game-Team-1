@@ -114,7 +114,7 @@ const Admin = () => {
           <nav className="nav-links">
             <a href="#dashboard" className="nav-link active">Dashboard</a>
             <a href="#players" className="nav-link">Players</a>
-            <a href="#games" className="nav-link">Games</a>
+            <a href="/games" className="nav-link">Games</a>
             <a href="#revenue" className="nav-link">Revenue</a>
           </nav>
         </div>
