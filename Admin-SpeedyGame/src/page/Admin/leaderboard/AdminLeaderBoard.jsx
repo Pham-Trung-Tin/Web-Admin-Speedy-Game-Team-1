@@ -16,7 +16,9 @@ import "./AdminLeaderBoard.css";
 
 // ---- Config: adapt to your app ----
 const ALLOWED_ROLES = ["ADMIN", "staff"]; // normalized to upper-case at runtime
-const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "https://speedycount-staging.amazingtech.cc/api"; // include /api
+const API_BASE =
+  import.meta?.env?.VITE_API_BASE_URL ||
+  "https://speedycount-staging.amazingtech.cc/api"; // include /api
 const ENDPOINTS = {
   allTime: "leaderboard/top",
   period: "leaderboard/top-period",
@@ -42,7 +44,9 @@ api.interceptors.response.use(
   (err) => {
     // Normalize network errors
     if (err.response) return Promise.reject(err);
-    return Promise.reject(new Error("Network error. Please check your connection."));
+    return Promise.reject(
+      new Error("Network error. Please check your connection.")
+    );
   }
 );
 
@@ -75,13 +79,18 @@ const getUserRoles = () => {
       return p.role || p.roles || [];
     }
   } catch {}
-  const rawGlobal = (typeof window !== "undefined" && (window.__USER__?.roles || window.APP_USER?.roles)) || [];
+  const rawGlobal =
+    (typeof window !== "undefined" &&
+      (window.__USER__?.roles || window.APP_USER?.roles)) ||
+    [];
   return Array.isArray(rawGlobal) ? rawGlobal : [];
 };
 
 const hasAccessByRoles = (roles) => {
   const norm = roles.map((r) => String(r).toUpperCase());
-  return norm.some((r) => ALLOWED_ROLES.map((x) => String(x).toUpperCase()).includes(r));
+  return norm.some((r) =>
+    ALLOWED_ROLES.map((x) => String(x).toUpperCase()).includes(r)
+  );
 };
 
 // Map API player shape -> our Player
@@ -90,9 +99,14 @@ const normalizePlayer = (p, idx) => {
   const score = p.totalScore ?? p.score ?? 0;
   const games = p.games ?? p.matches ?? 0;
   const wins = p.wins ?? p.victories ?? 0;
-  const winRate = p.winRate != null
-    ? (typeof p.winRate === "string" && p.winRate.includes("%") ? parseFloat(p.winRate) : Number(p.winRate))
-    : wins && games ? (wins / Math.max(1, games)) * 100 : 0;
+  const winRate =
+    p.winRate != null
+      ? typeof p.winRate === "string" && p.winRate.includes("%")
+        ? parseFloat(p.winRate)
+        : Number(p.winRate)
+      : wins && games
+      ? (wins / Math.max(1, games)) * 100
+      : 0;
 
   return {
     rank: p.rank ?? idx + 1,
@@ -107,17 +121,17 @@ const normalizePlayer = (p, idx) => {
   };
 };
 
-// // Fake data fallback (in case API is not reachable in preview)
-// const FAKE_DATA = Array.from({ length: 20 }).map((_, i) => ({
-//   rank: i + 1,
-//   username: `player_${i + 1}`,
-//   totalScore: Math.floor(250000 - i * 2345 + (i % 7) * 321),
-//   level: String(1 + ((i * 3) % 90)), // mimic string level from admin payload
-//   games: 50 + ((i * 7) % 530),
-//   wins: 25 + ((i * 5) % 400),
-//   winRate: Math.min(100, 40 + ((i * 3) % 55)),
-//   avatar: "🎮",
-// })).map(normalizePlayer);
+// Fake data fallback (in case API is not reachable in preview)
+const FAKE_DATA = Array.from({ length: 20 }).map((_, i) => ({
+  rank: i + 1,
+  username: `player_${i + 1}`,
+  totalScore: Math.floor(250000 - i * 2345 + (i % 7) * 321),
+  level: String(1 + ((i * 3) % 90)), // mimic string level from admin payload
+  games: 50 + ((i * 7) % 530),
+  wins: 25 + ((i * 5) % 400),
+  winRate: Math.min(100, 40 + ((i * 3) % 55)),
+  avatar: "🎮",
+})).map(normalizePlayer);
 
 const SortIcon = ({ dir }) => (
   <span className="inline-block align-middle ml-1 opacity-60 select-none">
@@ -133,7 +147,14 @@ const ColumnHeader = ({ label, sortKey, sort, setSort }) => {
       onClick={() => {
         setSort((s) => ({
           key: sortKey,
-          dir: s.key === sortKey ? (s.dir === "asc" ? "desc" : s.dir === "desc" ? undefined : "asc") : "asc",
+          dir:
+            s.key === sortKey
+              ? s.dir === "asc"
+                ? "desc"
+                : s.dir === "desc"
+                ? undefined
+                : "asc"
+              : "asc",
         }));
       }}
       title={`Sort by ${label}`}
@@ -153,8 +174,12 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [forbidden, setForbidden] = useState(false);
-  const [players, setPlayers] = useState(/** @type {Player[]} */([]));
-  const [stats, setStats] = useState({ maxScore: 0, totalPlayers: 0, totalGames: 0 });
+  const [players, setPlayers] = useState(/** @type {Player[]} */ ([]));
+  const [stats, setStats] = useState({
+    maxScore: 0,
+    totalPlayers: 0,
+    totalGames: 0,
+  });
   const [sort, setSort] = useState({ key: "rank", dir: "asc" });
 
   // Role gate (client-side)
@@ -165,23 +190,31 @@ export default function LeaderboardPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      setLoading(true); setError(""); setForbidden(false);
+      setLoading(true);
+      setError("");
+      setForbidden(false);
       try {
-        const url = activeTab === "All-Time"
-          ? ENDPOINTS.allTime
-          : `${ENDPOINTS.period}?period=${encodeURIComponent(period)}`;
+        const url =
+          activeTab === "All-Time"
+            ? ENDPOINTS.allTime
+            : `${ENDPOINTS.period}?period=${encodeURIComponent(period)}`;
 
         const res = await api.get(url);
         const json = res.data;
 
         // Accept admin payload { mode, total, items } or public arrays
-        const rows = Array.isArray(json) ? json : (json.items ?? json.data ?? json);
+        const rows = Array.isArray(json)
+          ? json
+          : json.items ?? json.data ?? json;
         const normalized = (rows || []).map(normalizePlayer);
 
         if (!cancelled) {
           const fallback = normalized.length ? normalized : FAKE_DATA;
           setPlayers(fallback);
-          const highest = fallback.reduce((m, p) => Math.max(m, p.score ?? 0), 0);
+          const highest = fallback.reduce(
+            (m, p) => Math.max(m, p.score ?? 0),
+            0
+          );
           const totalPlayers = Number(json?.total ?? fallback.length);
           const totalGames = fallback.reduce((s, p) => s + (p.games || 0), 0);
           setStats({ maxScore: highest, totalPlayers, totalGames });
@@ -203,8 +236,11 @@ export default function LeaderboardPage() {
     }
 
     // If client roles already show no access, skip fetch
-    if (hasAccess) load(); else setForbidden(true);
-    return () => { cancelled = true; };
+    if (hasAccess) load();
+    else setForbidden(true);
+    return () => {
+      cancelled = true;
+    };
   }, [activeTab, period, hasAccess]);
 
   // ranking recompute after sort & search
@@ -216,25 +252,32 @@ export default function LeaderboardPage() {
     if (sort.dir) {
       const dir = sort.dir === "asc" ? 1 : -1;
       rows.sort((a, b) => {
-        const ka = a[sort.key] ?? 0; const kb = b[sort.key] ?? 0;
-        if (typeof ka === "string" || typeof kb === "string") return String(ka).localeCompare(String(kb)) * dir;
+        const ka = a[sort.key] ?? 0;
+        const kb = b[sort.key] ?? 0;
+        if (typeof ka === "string" || typeof kb === "string")
+          return String(ka).localeCompare(String(kb)) * dir;
         return (ka - kb) * dir;
       });
     }
-    if (sort.key !== "rank" && sort.dir) rows = rows.map((r, i) => ({ ...r, rank: i + 1 }));
+    if (sort.key !== "rank" && sort.dir)
+      rows = rows.map((r, i) => ({ ...r, rank: i + 1 }));
     return rows;
   }, [players, query, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  useEffect(() => { setPage(1); }, [query, sort, pageSize, activeTab, period]);
+  useEffect(() => {
+    setPage(1);
+  }, [query, sort, pageSize, activeTab, period]);
 
   const resetRankings = async () => {
-    const ok = confirm("Are you sure you want to reset rankings? This action cannot be undone.");
+    const ok = confirm(
+      "Are you sure you want to reset rankings? This action cannot be undone."
+    );
     if (!ok) return;
     try {
-      await api.post(ENDPOINTS.reset)
+      await api.post(ENDPOINTS.reset);
       alert("Rankings reset requested (stub). Connect your API to complete.");
     } catch (e) {
       alert(`Failed to reset rankings: ${e}`);
@@ -246,8 +289,14 @@ export default function LeaderboardPage() {
       <div className="access-denied">
         <div className="access-denied-icon">🔒</div>
         <h1>Access restricted</h1>
-        <p>This leaderboard is only available to users with roles <b>ADMIN</b> or <b>staff</b>.</p>
-        <p className="help-text">If you believe this is a mistake, please sign in with an authorized account or contact an administrator.</p>
+        <p>
+          This leaderboard is only available to users with roles <b>ADMIN</b> or{" "}
+          <b>staff</b>.
+        </p>
+        <p className="help-text">
+          If you believe this is a mistake, please sign in with an authorized
+          account or contact an administrator.
+        </p>
       </div>
     );
   }
@@ -257,19 +306,34 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div className="leaderboard-header">
         <div className="leaderboard-title-section">
-          <h1>{activeTab === "All-Time" ? "All-Time Leaderboard" : "Period Leaderboard"}</h1>
-          <p>{activeTab === "All-Time" ? "Top performing players of all time" : `Top players by ${period}`}</p>
+          <h1>
+            {activeTab === "All-Time"
+              ? "All-Time Leaderboard"
+              : "Period Leaderboard"}
+          </h1>
+          <p>
+            {activeTab === "All-Time"
+              ? "Top performing players of all time"
+              : `Top players by ${period}`}
+          </p>
         </div>
         <div className="leaderboard-actions">
-          <button className="btn btn-secondary" onClick={() => alert("Analytics coming soon")}>📊 Analytics</button>
-          <button className="btn btn-primary" onClick={resetRankings}>🏆 Reset Rankings</button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => alert("Analytics coming soon")}
+          >
+            📊 Analytics
+          </button>
+          <button className="btn btn-primary" onClick={resetRankings}>
+            🏆 Reset Rankings
+          </button>
         </div>
       </div>
 
       {/* Tabs and Controls */}
       <div className="leaderboard-tabs">
         <div className="tab-group">
-          {(["All-Time", "Period"]).map((tab) => (
+          {["All-Time", "Period"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -298,25 +362,22 @@ export default function LeaderboardPage() {
             placeholder="Search player…"
             className="search-input"
           />
-          <select 
-            className="pagesize-select" 
-            value={pageSize} 
+          <select
+            className="pagesize-select"
+            value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
           >
-            {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n}/page</option>)}
+            {[10, 20, 50, 100].map((n) => (
+              <option key={n} value={n}>
+                {n}/page
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       {/* Stats */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">🏆</div>
-          <div className="stat-content">
-            <div className="stat-value">{numberFmt(stats.maxScore)}</div>
-            <div className="stat-label">Highest Score</div>
-          </div>
-        </div>
         <div className="stat-card">
           <div className="stat-icon">👤</div>
           <div className="stat-content">
@@ -325,11 +386,63 @@ export default function LeaderboardPage() {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🎮</div>
+          <div className="stat-icon">🏅</div>
           <div className="stat-content">
-            <div className="stat-value">{numberFmt(stats.totalGames)}</div>
-            <div className="stat-label">Games Played</div>
+            <div className="stat-value">{numberFmt(filtered.length)}</div>
+            <div className="stat-label">Ranked Players</div>
           </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🏆</div>
+          <div className="stat-content">
+            <div className="stat-value">{numberFmt(stats.maxScore)}</div>
+            <div className="stat-label">Highest Score</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sort and Filter Section */}
+      <div className="sort-filter-section">
+        <div className="sort-filter-left">
+          <div className="filter-group">
+            <label htmlFor="sortBy">Sort by:</label>
+            <select 
+              id="sortBy"
+              className="sort-select"
+              value={sort.key}
+              onChange={(e) => setSort({key: e.target.value, dir: 'desc'})}
+            >
+              <option value="rank">Rank</option>
+              <option value="username">Username</option>
+              <option value="level">Level</option>
+              <option value="score">Score</option>
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label htmlFor="sortOrder">Order:</label>
+            <select 
+              id="sortOrder"
+              className="sort-select"
+              value={sort.dir || 'asc'}
+              onChange={(e) => setSort(prev => ({...prev, dir: e.target.value}))}
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="sort-filter-right">
+          <button 
+            className="reset-sort-btn"
+            onClick={() => setSort({key: 'rank', dir: 'asc'})}
+          >
+         Reset Sort
+          </button>
+          <span className="results-count">
+            Showing {pageRows.length} of {filtered.length} players
+          </span>
         </div>
       </div>
 
@@ -338,52 +451,89 @@ export default function LeaderboardPage() {
         <table className="leaderboard-table">
           <thead>
             <tr>
-              <th><ColumnHeader label="#" sortKey="rank" sort={sort} setSort={setSort} /></th>
-              <th><ColumnHeader label="Player" sortKey="username" sort={sort} setSort={setSort} /></th>
-              <th><ColumnHeader label="Score" sortKey="score" sort={sort} setSort={setSort} /></th>
-              <th><ColumnHeader label="Level" sortKey="level" sort={sort} setSort={setSort} /></th>
-              <th><ColumnHeader label="Games" sortKey="games" sort={sort} setSort={setSort} /></th>
-              <th><ColumnHeader label="Win Rate" sortKey="winRate" sort={sort} setSort={setSort} /></th>
-              <th>Actions</th>
+              <th>
+                {/* <ColumnHeader
+                  label="#"
+                  sortKey="rank"
+                  sort={sort}
+                  setSort={setSort}
+                /> */}
+                Rank
+              </th>
+              <th>
+                {/* <ColumnHeader
+                  label="Player"
+                  sortKey="username"
+                  sort={sort}
+                  setSort={setSort}
+                /> */}
+                Player
+              </th>
+              <th>
+                {/* <ColumnHeader
+                  label="Level"
+                  sortKey="level"
+                  sort={sort}
+                  setSort={setSort}
+                /> */}
+                Level
+              </th>
+              <th>
+                {/* <ColumnHeader
+                  label="Score"
+                  sortKey="totalScore"
+                  sort={sort}
+                  setSort={setSort}
+                /> */}
+                Score
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="loading-row">
+                <td colSpan={4} className="loading-row">
                   <div className="loading-text">Loading leaderboard…</div>
                 </td>
               </tr>
             )}
-            {!loading && pageRows.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <div className="rank-display">
-                    <span className="rank-number">#{p.rank}</span>
-                    <span className="rank-avatar">{p.avatar ?? "👤"}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className="player-info">
-                    <div className="player-avatar">{p.avatar ?? "👤"}</div>
-                    <span className="player-name">{p.username}</span>
-                  </div>
-                </td>
-                <td><span className="score-display">{numberFmt(p.score)}</span></td>
-                <td><span className="level-badge">Level {p.level ?? 1}</span></td>
-                <td>{numberFmt(p.games)}</td>
-                <td><span className="win-rate">{typeof p.winRate === "string" ? p.winRate : `${Math.round(p.winRate)}%`}</span></td>
-                <td>
-                  <div className="action-buttons">
-                    <button className="btn-action" title="View">👁️</button>
-                    <button className="btn-action" title="Stats">📊</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {!loading &&
+              pageRows.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <div className="rank-display">
+                      <span className="rank-number">#{p.rank}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="player-info">
+                      <div className="player-avatar">
+                        {p.avatar && p.avatar !== "default-avatar.png" ? (
+                          <img
+                            src={p.avatar}
+                            alt={p.username}
+                            className="avatar-img"
+                          />
+                        ) : (
+                          <span className="avatar-placeholder">👤</span>
+                        )}
+                      </div>
+                      <span className="player-name">{p.username}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="level-badge">{p.level}</span>
+                  </td>
+                  <td>
+                    <span className="score-value">{numberFmt(p.score)}</span>
+                  </td>
+                </tr>
+              ))}
             {!loading && pageRows.length === 0 && (
               <tr>
-                <td colSpan={7} className="empty-row">No players found.</td>
+                <td colSpan={4} className="empty-row">
+                  No players found.
+                </td>
               </tr>
             )}
           </tbody>
@@ -392,23 +542,56 @@ export default function LeaderboardPage() {
 
       {/* Pagination */}
       <div className="pagination">
-        <div className="pagination-info">{filtered.length} players • Page {page} / {totalPages}</div>
+        <div className="pagination-info">
+          {filtered.length} players • Page {page} / {totalPages}
+        </div>
         <div className="pagination-buttons">
-          <button className="pagination-button" disabled={page <= 1} onClick={() => setPage(1)}>⏮</button>
-          <button className="pagination-button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>← Prev</button>
-          <button className="pagination-button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next →</button>
-          <button className="pagination-button" disabled={page >= totalPages} onClick={() => setPage(totalPages)}>⏭</button>
+          <button
+            className="pagination-button"
+            disabled={page <= 1}
+            onClick={() => setPage(1)}
+          >
+            ⏮
+          </button>
+          <button
+            className="pagination-button"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            ← Prev
+          </button>
+          <button
+            className="pagination-button"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next →
+          </button>
+          <button
+            className="pagination-button"
+            disabled={page >= totalPages}
+            onClick={() => setPage(totalPages)}
+          >
+            ⏭
+          </button>
         </div>
       </div>
 
       {/* Error (non-blocking) */}
       {error && (
-        <div className="error-message">Note: API error encountered (showing demo data). Details: {error}</div>
+        <div className="error-message">
+          Note: API error encountered (showing demo data). Details: {error}
+        </div>
       )}
 
       {/* Footer / API docs hint */}
       <div className="api-docs">
-        <div>API endpoints (axios): <code>GET /leaderboard/top</code>, <code>GET /leaderboard/top-period?period=week|month</code>, <code>POST /leaderboard/reset</code>. Base URL: <code>{API_BASE || "/"}</code></div>
+        <div>
+          API endpoints (axios): <code>GET /leaderboard/top</code>,{" "}
+          <code>GET /leaderboard/top-period?period=week|month</code>,{" "}
+          <code>POST /leaderboard/reset</code>. Base URL:{" "}
+          <code>{API_BASE || "/"}</code>
+        </div>
       </div>
     </div>
   );
