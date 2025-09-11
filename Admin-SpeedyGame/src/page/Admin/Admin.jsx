@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { authService } from '../../services/authService'
 import './Admin.css'
 
 const Admin = () => {
@@ -9,6 +10,11 @@ const Admin = () => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
+      // Xóa dữ liệu xác thực
+      authService.logout()
+      localStorage.removeItem('authData')
+      
+      // Redirect về trang login
       navigate('/login')
     }
   }
