@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Admin.css'
+import './AdminNew.css'
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('Dashboard')
