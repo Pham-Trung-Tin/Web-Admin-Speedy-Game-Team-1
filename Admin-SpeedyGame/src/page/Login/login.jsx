@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import './login.css'
 
 const Login = () => {
@@ -36,11 +36,6 @@ const Login = () => {
   const handleForgotPassword = () => {
     // Handle forgot password logic
     alert('Forgot password functionality - to be implemented')
-  }
-
-  const handleSignUp = () => {
-    // Handle sign up navigation
-    alert('Sign up functionality - to be implemented')
   }
 
   return (
@@ -102,14 +97,12 @@ const Login = () => {
             </div>
 
             <div className="forgot-password">
-              <button
-                type="button"
+              <Link
+                to="/forgot-password"
                 className="forgot-password-link"
-                onClick={handleForgotPassword}
-                disabled={isLoading}
               >
                 Forgot Password?
-              </button>
+              </Link>
             </div>
 
             <button 
@@ -131,14 +124,12 @@ const Login = () => {
           <div className="signup-section">
             <p>
               Don't have an account?{' '}
-              <button
-                type="button"
+              <Link
+                to="/signup"
                 className="signup-link"
-                onClick={handleSignUp}
-                disabled={isLoading}
               >
                 Sign Up
-              </button>
+              </Link>
             </p>
           </div>
         </div>
