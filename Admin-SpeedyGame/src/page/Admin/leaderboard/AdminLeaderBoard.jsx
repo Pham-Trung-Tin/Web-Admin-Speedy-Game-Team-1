@@ -171,6 +171,7 @@ export default function LeaderboardPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [limit, setLimit] = useState(10); // API limit parameter (max 100)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [forbidden, setForbidden] = useState(false);
@@ -194,12 +195,18 @@ export default function LeaderboardPage() {
       setError("");
       setForbidden(false);
       try {
-        const url =
-          activeTab === "All-Time"
-            ? ENDPOINTS.allTime
-            : `${ENDPOINTS.period}?period=${encodeURIComponent(period)}`;
+        // Build URL with parameters
+        let url;
+        let params = { limit: limit };
+        
+        if (activeTab === "All-Time") {
+          url = ENDPOINTS.allTime;
+        } else {
+          url = ENDPOINTS.period;
+          params.period = period;
+        }
 
-        const res = await api.get(url);
+        const res = await api.get(url, { params });
         const json = res.data;
 
         // Accept admin payload { mode, total, items } or public arrays
@@ -241,7 +248,7 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, period, hasAccess]);
+  }, [activeTab, period, limit, hasAccess]);
 
   // ranking recompute after sort & search
   const filtered = useMemo(() => {
@@ -269,7 +276,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort, pageSize, activeTab, period]);
+  }, [query, sort, pageSize, activeTab, period, limit]);
 
   const resetRankings = async () => {
     const ok = confirm(
@@ -362,17 +369,35 @@ export default function LeaderboardPage() {
             placeholder="Search player…"
             className="search-input"
           />
-          <select
-            className="pagesize-select"
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-          >
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>
-                {n}/page
-              </option>
-            ))}
-          </select>
+          <div className="control-group">
+            <label className="control-label">Limit:</label>
+            <select
+              className="limit-select"
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              title="Number of players to fetch from API"
+            >
+              {[10, 20, 30, 50, 75, 100].map((n) => (
+                <option key={n} value={n}>
+                  Top {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="control-group">
+            <label className="control-label">Per Page:</label>
+            <select
+              className="pagesize-select"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
