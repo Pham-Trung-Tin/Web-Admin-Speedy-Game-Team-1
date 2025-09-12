@@ -170,7 +170,7 @@ export default function LeaderboardPage() {
   const [period, setPeriod] = useState("week"); // week | month
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const pageSize = 10; // Fixed page size - always show 10 players per page
   const [limit, setLimit] = useState(10); // API limit parameter (max 100)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -190,6 +190,20 @@ export default function LeaderboardPage() {
   // Fetch leaderboard
   useEffect(() => {
     let cancelled = false;
+    
+    async function fetchTotalCount() {
+      try {
+        // Fetch with a very high limit to get total count
+        const countRes = await api.get(ENDPOINTS.allTime, { params: { limit: 1000 } });
+        const countData = countRes.data;
+        const countItems = Array.isArray(countData) ? countData : (countData.items ?? countData.data ?? []);
+        return countItems.length;
+      } catch (e) {
+        console.warn("Failed to fetch total count:", e);
+        return null;
+      }
+    }
+    
     async function load() {
       setLoading(true);
       setError("");
@@ -206,7 +220,12 @@ export default function LeaderboardPage() {
           params.period = period;
         }
 
-        const res = await api.get(url, { params });
+        // Fetch main data and total count in parallel
+        const [res, totalCount] = await Promise.all([
+          api.get(url, { params }),
+          activeTab === "All-Time" ? fetchTotalCount() : Promise.resolve(null)
+        ]);
+        
         const json = res.data;
 
         // Accept admin payload { mode, total, items } or public arrays
@@ -222,7 +241,17 @@ export default function LeaderboardPage() {
             (m, p) => Math.max(m, p.score ?? 0),
             0
           );
-          const totalPlayers = Number(json?.total ?? fallback.length);
+          
+          // Use total count from separate API call, or fall back to API response total, or current data length
+          let totalPlayers;
+          if (totalCount !== null) {
+            totalPlayers = totalCount;
+          } else if (json?.total && typeof json.total === 'number') {
+            totalPlayers = json.total;
+          } else {
+            totalPlayers = normalized.length;
+          }
+          
           const totalGames = fallback.reduce((s, p) => s + (p.games || 0), 0);
           setStats({ maxScore: highest, totalPlayers, totalGames });
         }
@@ -276,7 +305,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort, pageSize, activeTab, period, limit]);
+  }, [query, sort, activeTab, period, limit]);
 
   const resetRankings = async () => {
     const ok = confirm(
@@ -324,7 +353,7 @@ export default function LeaderboardPage() {
               : `Top players by ${period}`}
           </p>
         </div>
-        <div className="leaderboard-actions">
+        {/* <div className="leaderboard-actions">
           <button
             className="btn btn-secondary"
             onClick={() => alert("Analytics coming soon")}
@@ -334,7 +363,7 @@ export default function LeaderboardPage() {
           <button className="btn btn-primary" onClick={resetRankings}>
             🏆 Reset Rankings
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Tabs and Controls */}
@@ -384,20 +413,6 @@ export default function LeaderboardPage() {
               ))}
             </select>
           </div>
-          <div className="control-group">
-            <label className="control-label">Per Page:</label>
-            <select
-              className="pagesize-select"
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-            >
-              {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
@@ -410,13 +425,13 @@ export default function LeaderboardPage() {
             <div className="stat-label">Total Players</div>
           </div>
         </div>
-        <div className="stat-card">
+        {/* <div className="stat-card">
           <div className="stat-icon">🏅</div>
           <div className="stat-content">
             <div className="stat-value">{numberFmt(filtered.length)}</div>
             <div className="stat-label">Ranked Players</div>
           </div>
-        </div>
+        </div> */}
         <div className="stat-card">
           <div className="stat-icon">🏆</div>
           <div className="stat-content">
@@ -568,7 +583,7 @@ export default function LeaderboardPage() {
       {/* Pagination */}
       <div className="pagination">
         <div className="pagination-info">
-          {filtered.length} players • Page {page} / {totalPages}
+          Showing {Math.min((page - 1) * pageSize + 1, filtered.length)}-{Math.min(page * pageSize, filtered.length)} of {filtered.length} players • Page {page} of {totalPages}
         </div>
         <div className="pagination-buttons">
           <button
@@ -608,16 +623,6 @@ export default function LeaderboardPage() {
           Note: API error encountered (showing demo data). Details: {error}
         </div>
       )}
-
-      {/* Footer / API docs hint */}
-      <div className="api-docs">
-        <div>
-          API endpoints (axios): <code>GET /leaderboard/top</code>,{" "}
-          <code>GET /leaderboard/top-period?period=week|month</code>,{" "}
-          <code>POST /leaderboard/reset</code>. Base URL:{" "}
-          <code>{API_BASE || "/"}</code>
-        </div>
-      </div>
     </div>
   );
 }
