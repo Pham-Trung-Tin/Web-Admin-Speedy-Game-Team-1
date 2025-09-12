@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { authService } from '../../services/authService'
+import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
 import './Admin.css'
 
 const Admin = () => {
@@ -9,6 +11,11 @@ const Admin = () => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
+      // Xóa dữ liệu xác thực
+      authService.logout()
+      localStorage.removeItem('authData')
+      
+      // Redirect về trang login
       navigate('/login')
     }
   }
@@ -97,14 +104,6 @@ const Admin = () => {
     { id: 2, username: 'FastClicker', email: 'fast@example.com', level: 32, totalClicks: 156789, status: 'active', joinDate: '2024-02-20', lastActive: '5 min ago' },
     { id: 3, username: 'ProGamer', email: 'pro@example.com', level: 55, totalClicks: 445632, status: 'active', joinDate: '2023-12-05', lastActive: '1 hour ago' },
     { id: 4, username: 'Newbie123', email: 'newbie@example.com', level: 8, totalClicks: 12456, status: 'banned', joinDate: '2024-03-10', lastActive: '2 days ago' }
-  ]
-
-  const leaderboardData = [
-    { rank: 1, username: 'SpeedMaster99', score: 234567, level: 47, games: 1234, winRate: '87%', avatar: '👑' },
-    { rank: 2, username: 'ProGamer', score: 445632, level: 55, games: 2156, winRate: '82%', avatar: '🥈' },
-    { rank: 3, username: 'FastClicker', score: 156789, level: 32, games: 987, winRate: '79%', avatar: '🥉' },
-    { rank: 4, username: 'ClickMaster', score: 123456, level: 28, games: 756, winRate: '75%', avatar: '⭐' },
-    { rank: 5, username: 'QuickHands', score: 98765, level: 25, games: 543, winRate: '71%', avatar: '🌟' }
   ]
 
   // Render functions for different sections
@@ -473,88 +472,7 @@ const Admin = () => {
   )
 
   const renderAllTimeLeaders = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">All-Time Leaderboard</h1>
-          <p className="page-subtitle">Top performing players of all time</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📊 Analytics</button>
-          <button className="btn btn-primary">🏆 Reset Rankings</button>
-        </div>
-      </div>
-
-      <div className="content-section">
-        <div className="leaderboard-stats">
-          <div className="stat-card">
-            <div className="stat-icon">🏆</div>
-            <div className="stat-content">
-              <div className="stat-value">234,567</div>
-              <div className="stat-label">Highest Score</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">👤</div>
-            <div className="stat-content">
-              <div className="stat-value">12,847</div>
-              <div className="stat-label">Total Players</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">🎮</div>
-            <div className="stat-content">
-              <div className="stat-value">45,678</div>
-              <div className="stat-label">Games Played</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="table-container">
-          <table className="data-table leaderboard">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Score</th>
-                <th>Level</th>
-                <th>Games</th>
-                <th>Win Rate</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboardData.map(player => (
-                <tr key={player.rank}>
-                  <td>
-                    <div className="rank-display">
-                      <span className="rank-number">#{player.rank}</span>
-                      <span className="rank-icon">{player.avatar}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="player-info">
-                      <div className="player-avatar">👤</div>
-                      <span className="username">{player.username}</span>
-                    </div>
-                  </td>
-                  <td><span className="score-display">{player.score.toLocaleString()}</span></td>
-                  <td><span className="level-badge">Level {player.level}</span></td>
-                  <td>{player.games.toLocaleString()}</td>
-                  <td><span className="win-rate">{player.winRate}</span></td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">📊</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <AdminLeaderBoard />
   )
 
   const renderDefaultContent = () => (
