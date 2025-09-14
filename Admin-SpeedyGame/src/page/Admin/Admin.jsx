@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../../services/authService'
-import { getUserList } from '../../services/userService'
-import { createUser } from '../../services/userService'
 import CreateUser from './user/CreateUser'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
 import UserList from './user/UserList'
 import UserManagement from './user/UserManagement'
+import CreateRoom from './gameRooms/CreateRoom'
+import RoomDetail from './gameRooms/RoomDetail'
+import ListRooms from './gameRooms/ListRooms'
 import './Admin.css'
 
 // ---- Config: quyền hạn cho admin ----
@@ -42,6 +43,19 @@ const Admin = () => {
   // Kiểm tra quyền hạn
   const roles = getUserRoles();
   const hasAccess = hasAccessByRoles(roles);
+
+  // Lắng nghe sự kiện thay đổi tab từ các component con
+  useEffect(() => {
+    const handleTabChange = (event) => {
+      setActiveTab(event.detail);
+    };
+
+    window.addEventListener("changeAdminTab", handleTabChange);
+    
+    return () => {
+      window.removeEventListener("changeAdminTab", handleTabChange);
+    };
+  }, []);
 
   // Nếu không có quyền, hiển thị thông báo
   if (!hasAccess) {
@@ -84,8 +98,8 @@ const Admin = () => {
       title: 'Game Rooms (Admin)',
       items: [
         { id: 'GameRooms', icon: '🏠', label: 'List Rooms', active: activeTab === 'GameRooms' },
-        { id: 'CreateRoom', icon: '➕', label: 'Create Room', active: activeTab === 'CreateRoom' },
-        { id: 'RoomDetails', icon: '📋', label: 'Room Details', active: activeTab === 'RoomDetails' }
+        { id: 'CreateRoom', icon: '➕', label: 'Create Room', active: activeTab === 'CreateRoom' }
+        
       ]
     },
     {
@@ -260,93 +274,15 @@ const Admin = () => {
   )
 
   const renderGameRooms = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">Game Rooms Management</h1>
-          <p className="page-subtitle">Manage and monitor all game rooms</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📤 Export</button>
-          <button className="btn btn-primary">➕ Create New Room</button>
-        </div>
-      </div>
+    <ListRooms />
+  )
 
-      <div className="content-section">
-        <div className="table-header">
-          <div className="table-filters">
-            <input type="text" placeholder="🔍 Search rooms..." className="search-input" />
-            <select className="filter-select">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Waiting</option>
-              <option>Live</option>
-              <option>Completed</option>
-            </select>
-            <select className="filter-select">
-              <option>All Types</option>
-              <option>Tournament</option>
-              <option>Casual</option>
-              <option>Practice</option>
-            </select>
-          </div>
-        </div>
+  const renderCreateRoom = () => (
+    <CreateRoom />
+  )
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Room Name</th>
-                <th>Room Code</th>
-                <th>Players</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Creator</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gameRoomsData.map(room => (
-                <tr key={room.id}>
-                  <td>
-                    <div className="room-info">
-                      <div className="room-icon">🏠</div>
-                      <div className="room-name">{room.name}</div>
-                    </div>
-                  </td>
-                  <td><span className="room-code">{room.code}</span></td>
-                  <td>
-                    <span className="player-count">
-                      {room.players}/{room.maxPlayers}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${room.status}`}>
-                      {room.status}
-                    </span>
-                  </td>
-                  <td>{room.created}</td>
-                  <td>{room.creator}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">✏️</button>
-                      <button className="btn-action danger">🗑️</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="pagination">
-          <button className="btn btn-secondary">Previous</button>
-          <span className="pagination-info">Showing 1-4 of 1,429 rooms</span>
-          <button className="btn btn-secondary">Next</button>
-        </div>
-      </div>
-    </div>
+  const renderRoomDetails = () => (
+    <RoomDetail />
   )
 
   const renderGameSessions = () => (
@@ -523,12 +459,14 @@ const Admin = () => {
         <main className="main-content">
           {activeTab === 'Dashboard' && renderDashboard()}
           {activeTab === 'GameRooms' && renderGameRooms()}
+          {activeTab === 'CreateRoom' && renderCreateRoom()}
+          {activeTab === 'RoomDetails' && renderRoomDetails()}
           {activeTab === 'GameSessions' && renderGameSessions()}
           {activeTab === 'Users' && renderUsers()}
           {activeTab === 'AllTimeLeaders' && renderAllTimeLeaders()}
           {activeTab === 'CreateUser' && <CreateUser onSuccess={() => setActiveTab('Users')} />}
           {activeTab === 'UserManagement' && <UserManagement />}
-          {!['Dashboard', 'GameRooms', 'GameSessions', 'Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
+          {!['Dashboard', 'GameRooms', 'CreateRoom', 'RoomDetails', 'GameSessions', 'Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
     </div>
