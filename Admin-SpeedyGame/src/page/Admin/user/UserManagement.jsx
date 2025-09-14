@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getUserList } from '../../services/userService';
-import { deleteUser } from '../../services/userService';
+import { getUserList } from '../../../services/userService';
+import { deleteUser } from '../../../services/userService';
+
+export default function UserManagement() {
+  const [search, setSearch] = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const handleDelete = async (user) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa user ${user.username || user.email}?`)) return;
     try {
@@ -10,12 +17,6 @@ import { deleteUser } from '../../services/userService';
       alert(err.message || 'Xóa user thất bại!');
     }
   };
-
-export default function UserManagement() {
-  const [search, setSearch] = useState('');
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     setLoading(true);
