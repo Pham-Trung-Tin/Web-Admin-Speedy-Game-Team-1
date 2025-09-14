@@ -1,80 +1,88 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import './SignUp.css'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "./SignUp.css";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
-    
-    email: '',
-    username: '',
-    password: '',
-    
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState({})
-  const navigate = useNavigate()
-
+    email: "",
+    username: "",
+    password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
-
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSignUp = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const newErrors = {}
+    const newErrors = {};
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
+      newErrors.email = "Email is invalid";
     }
     if (!formData.username.trim()) {
-      newErrors.username = "Username is required"
+      newErrors.username = "Username is required";
     }
     if (!formData.password) {
-      newErrors.password = "Password is required"
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
+      setErrors(newErrors);
+      return;
     }
 
-    setIsLoading(true)
-    
-     try {
-      const response = await fetch(
-        "https://speedycount-staging.amazingtech.cc/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password
-          })
-        }
-      )
+    setIsLoading(true);
 
-      if (!response.ok) throw new Error("Failed to register")
-      const data = await response.json()
-      console.log("API response:", data)
+      try {
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      alert("Account created successfully! Please check your email for OTP.")
-      navigate("/verify-email", { state: { email: formData.email } })
+      console.log("Request URL:", `${API_BASE}/auth/register`);
+      console.log("Request Body:", formData);
+      console.log("Response status:", response.status);
+
+      if (response.status === 409) {
+        setErrors({ general: "Email or Username already exists" });
+        return;
+      }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Backend error:", errorText);
+        throw new Error("Failed to register");
+      }
+
+      const data = await response.json();
+      console.log("API response:", data);
+
+      alert("Account created successfully! Please check your email for OTP.");
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (error) {
-      console.error("Sign up failed:", error)
-      setErrors({ general: "Registration failed. Please try again." })
+      console.error("Sign up failed:", error);
+      setErrors({ general: "Registration failed. Please try again." });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
 
   return (
     <div className="signup-page">
@@ -94,27 +102,25 @@ const SignUp = () => {
             <p>Join SpeedyGame admin community</p>
           </div>
 
-           {errors.general && <p className="field-error">{errors.general}</p>}
+          {errors.general && <p className="field-error">{errors.general}</p>}
 
           <form className="signup-form" onSubmit={handleSignUp}>
-           
             {/* Username */}
             <div className="form-group">
               <label htmlFor="username">Username</label>
               <div className="input-container">
                 <input
                   type="text"
-                  
                   name="username"
                   placeholder="Choose a username"
                   value={formData.username}
                   onChange={handleChange}
-                  
-                 
                 />
                 <span className="input-icon">🆔</span>
               </div>
-             {errors.username && <p className="field-error">{errors.username}</p>}
+              {errors.username && (
+                <p className="field-error">{errors.username}</p>
+              )}
             </div>
             {/* Email */}
             <div className="form-group">
@@ -122,19 +128,15 @@ const SignUp = () => {
               <div className="input-container">
                 <input
                   type="text"
-                  
                   name="email"
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
-                  
                 />
                 <span className="input-icon">📧</span>
               </div>
               {errors.email && <p className="field-error">{errors.email}</p>}
             </div>
-
-            
 
             {/* Password */}
             <div className="form-group">
@@ -142,12 +144,10 @@ const SignUp = () => {
               <div className="input-container">
                 <input
                   type={showPassword ? "text" : "password"}
-                 
                   name="password"
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
-                 
                 />
                 <button
                   type="button"
@@ -158,23 +158,28 @@ const SignUp = () => {
                   {showPassword ? "🙈" : "👁️"}
                 </button>
               </div>
-              {errors.password && <span className="field-error">{errors.password}</span>}
+              {errors.password && (
+                <span className="field-error">{errors.password}</span>
+              )}
             </div>
 
-            
             {/* Terms & Conditions */}
             <div className="terms-section">
               <p>
-                By creating an account, you agree to our{' '}
-                <a href="#terms" className="terms-link">Terms of Service</a>
-                {' '}and{' '}
-                <a href="#privacy" className="terms-link">Privacy Policy</a>
+                By creating an account, you agree to our{" "}
+                <a href="#terms" className="terms-link">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="#privacy" className="terms-link">
+                  Privacy Policy
+                </a>
               </p>
             </div>
 
-            <button 
-              type="submit" 
-              className={`signup-button ${isLoading ? 'loading' : ''}`}
+            <button
+              type="submit"
+              className={`signup-button ${isLoading ? "loading" : ""}`}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -183,19 +188,18 @@ const SignUp = () => {
                   Creating Account...
                 </>
               ) : (
-                'Create Account →'
+                "Create Account →"
               )}
             </button>
           </form>
 
           <div className="login-section">
             <p>
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link to="/login" className="login-link">
                 Sign In
               </Link>
             </p>
-           
           </div>
         </div>
 
@@ -218,7 +222,7 @@ const SignUp = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SignUp
+export default SignUp;

@@ -4,10 +4,57 @@ import { authService } from '../../services/authService'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
 import './Admin.css'
 
+// ---- Config: quyền hạn cho admin ----
+const ALLOWED_ROLES = ["ADMIN", "staff"];
+
+// Hàm kiểm tra quyền hạn
+const getUserRoles = () => {
+  try {
+    const raw = localStorage.getItem('user_profile');
+    if (raw) {
+      const p = JSON.parse(raw);
+      return p.role || p.roles || [];
+    }
+  } catch {}
+  
+  const rawGlobal = (typeof window !== "undefined" &&
+    (window.__USER__?.roles || window.APP_USER?.roles)) || [];
+  return Array.isArray(rawGlobal) ? rawGlobal : [];
+};
+
+const hasAccessByRoles = (roles) => {
+  const norm = roles.map((r) => String(r).toUpperCase());
+  return norm.some((r) =>
+    ALLOWED_ROLES.map((x) => String(x).toUpperCase()).includes(r)
+  );
+};
+
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('Dashboard')
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const navigate = useNavigate()
+
+  // Kiểm tra quyền hạn
+  const roles = getUserRoles();
+  const hasAccess = hasAccessByRoles(roles);
+
+  // Nếu không có quyền, hiển thị thông báo
+  if (!hasAccess) {
+    return (
+      <div className="access-denied">
+        <div className="access-denied-icon">🔒</div>
+        <h1>Access Denied</h1>
+        <p>You don't have permission to access the Admin Panel.</p>
+        <p>Required roles: <strong>ADMIN</strong> or <strong>staff</strong></p>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => navigate('/login')}
+        >
+          Back to Login
+        </button>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {

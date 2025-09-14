@@ -3,19 +3,17 @@ import axios from "axios";
 import "./AdminLeaderBoard.css";
 
 // =====================================
-// Leaderboard Page with Role Guard (ADMIN / staff)
+// Leaderboard Page
 // - Supports admin payload shape:
 //   {
 //     mode: "all-time",
 //     total: number,
 //     items: [{ rank, userId, username, avatar, level, totalScore }]
 //   }
-// - Only users with roles in ALLOWED_ROLES can access
 // - Fallback demo data so you can preview without API
 // =====================================
 
 // ---- Config: adapt to your app ----
-const ALLOWED_ROLES = ["ADMIN", "staff"]; // normalized to upper-case at runtime
 const API_BASE =
   import.meta?.env?.VITE_API_BASE_URL ||
   "https://speedycount-staging.amazingtech.cc/api"; // include /api
@@ -68,30 +66,6 @@ api.interceptors.response.use(
 // ---- Helpers ----
 const numberFmt = (n) => (n ?? 0).toLocaleString();
 const classNames = (...c) => c.filter(Boolean).join(" ");
-
-// Try to read roles from a global your app sets after login
-const getUserRoles = () => {
-  // Prefer localStorage profile set after login; fallback to globals
-  try {
-    const raw = localStorage.getItem("user_profile");
-    if (raw) {
-      const p = JSON.parse(raw);
-      return p.role || p.roles || [];
-    }
-  } catch {}
-  const rawGlobal =
-    (typeof window !== "undefined" &&
-      (window.__USER__?.roles || window.APP_USER?.roles)) ||
-    [];
-  return Array.isArray(rawGlobal) ? rawGlobal : [];
-};
-
-const hasAccessByRoles = (roles) => {
-  const norm = roles.map((r) => String(r).toUpperCase());
-  return norm.some((r) =>
-    ALLOWED_ROLES.map((x) => String(x).toUpperCase()).includes(r)
-  );
-};
 
 // Map API player shape -> our Player
 const normalizePlayer = (p, idx) => {
@@ -174,7 +148,6 @@ export default function LeaderboardPage() {
   const [limit, setLimit] = useState(10); // API limit parameter (max 100)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [forbidden, setForbidden] = useState(false);
   const [players, setPlayers] = useState(/** @type {Player[]} */ ([]));
   const [stats, setStats] = useState({
     maxScore: 0,
@@ -182,10 +155,6 @@ export default function LeaderboardPage() {
     totalGames: 0,
   });
   const [sort, setSort] = useState({ key: "rank", dir: "asc" });
-
-  // Role gate (client-side)
-  const roles = getUserRoles();
-  const hasAccess = hasAccessByRoles(roles);
 
   // Fetch leaderboard
   useEffect(() => {
@@ -207,7 +176,6 @@ export default function LeaderboardPage() {
     async function load() {
       setLoading(true);
       setError("");
-      setForbidden(false);
       try {
         // Build URL with parameters
         let url;
@@ -271,13 +239,12 @@ export default function LeaderboardPage() {
       }
     }
 
-    // If client roles already show no access, skip fetch
-    if (hasAccess) load();
-    else setForbidden(true);
+    // Simply load data without role checking
+    load();
     return () => {
       cancelled = true;
     };
-  }, [activeTab, period, limit, hasAccess]);
+  }, [activeTab, period, limit]);
 
   // ranking recompute after sort & search
   const filtered = useMemo(() => {
@@ -328,23 +295,6 @@ export default function LeaderboardPage() {
       alert(`Failed to reset rankings: ${e}`);
     }
   };
-
-  if (forbidden) {
-    return (
-      <div className="access-denied">
-        <div className="access-denied-icon">🔒</div>
-        <h1>Access restricted</h1>
-        <p>
-          This leaderboard is only available to users with roles <b>ADMIN</b> or{" "}
-          <b>staff</b>.
-        </p>
-        <p className="help-text">
-          If you believe this is a mistake, please sign in with an authorized
-          account or contact an administrator.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="leaderboard-page">
