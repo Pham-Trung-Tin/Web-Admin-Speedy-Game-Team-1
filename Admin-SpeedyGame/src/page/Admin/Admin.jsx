@@ -62,9 +62,8 @@ const Admin = () => {
     {
       title: 'Leaderboard',
       items: [
-        { id: 'AllTimeLeaders', icon: '🏆', label: 'Top All-time', active: activeTab === 'AllTimeLeaders' },
-        { id: 'WeeklyLeaders', icon: '📅', label: 'Weekly/Monthly', active: activeTab === 'WeeklyLeaders' },
-        { id: 'PlayerSessions', icon: '🎯', label: 'Player Sessions', active: activeTab === 'PlayerSessions' }
+        { id: 'AllTimeLeaders', icon: '🏆', label: 'Top All-time', active: activeTab === 'AllTimeLeaders' }
+       
       ]
     }
   ]

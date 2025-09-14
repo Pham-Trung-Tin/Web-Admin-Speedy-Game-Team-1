@@ -287,6 +287,11 @@ export default function LeaderboardPage() {
 
     if (sort.dir) {
       const dir = sort.dir === "asc" ? 1 : -1;
+      
+      // Debug log to check data
+      console.log('Sorting by:', sort.key, 'direction:', sort.dir);
+      console.log('Sample data before sort:', rows.slice(0, 3));
+      
       rows.sort((a, b) => {
         const ka = a[sort.key] ?? 0;
         const kb = b[sort.key] ?? 0;
@@ -294,9 +299,13 @@ export default function LeaderboardPage() {
           return String(ka).localeCompare(String(kb)) * dir;
         return (ka - kb) * dir;
       });
-    }
-    if (sort.key !== "rank" && sort.dir)
+      
+      // Always update rank after sorting to reflect new order
       rows = rows.map((r, i) => ({ ...r, rank: i + 1 }));
+      
+      console.log('Sample data after sort:', rows.slice(0, 3));
+    }
+    
     return rows;
   }, [players, query, sort]);
 
