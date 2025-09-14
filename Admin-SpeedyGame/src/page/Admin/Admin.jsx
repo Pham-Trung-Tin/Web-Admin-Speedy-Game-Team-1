@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../../services/authService'
+import { getUserList } from '../../services/userService'
+import { createUser } from '../../services/userService'
+import CreateUser from './CreateUser'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
+import UserManagement from './UserManagement'
 import './Admin.css'
 
 // ---- Config: quyền hạn cho admin ----
@@ -145,12 +149,22 @@ const Admin = () => {
     { id: 4, roomName: 'Practice Room', player: 'Newbie123', score: 845, duration: '05:33', status: 'ongoing', startTime: '15:45' }
   ]
 
-  const usersData = [
-    { id: 1, username: 'SpeedMaster99', email: 'speed@example.com', level: 47, totalClicks: 234567, status: 'active', joinDate: '2024-01-15', lastActive: '2 min ago' },
-    { id: 2, username: 'FastClicker', email: 'fast@example.com', level: 32, totalClicks: 156789, status: 'active', joinDate: '2024-02-20', lastActive: '5 min ago' },
-    { id: 3, username: 'ProGamer', email: 'pro@example.com', level: 55, totalClicks: 445632, status: 'active', joinDate: '2023-12-05', lastActive: '1 hour ago' },
-    { id: 4, username: 'Newbie123', email: 'newbie@example.com', level: 8, totalClicks: 12456, status: 'banned', joinDate: '2024-03-10', lastActive: '2 days ago' }
-  ]
+  const [usersData, setUsersData] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [userError, setUserError] = useState(null)
+
+  useEffect(() => {
+    if (activeTab === 'Users') {
+      setLoadingUsers(true)
+      setUserError(null)
+      getUserList()
+        .then(data => {
+          setUsersData(Array.isArray(data) ? data : (data?.items || []))
+        })
+        .catch(err => setUserError('Lỗi tải danh sách user'))
+        .finally(() => setLoadingUsers(false))
+    }
+  }, [activeTab])
 
   // Render functions for different sections
   const renderDashboard = () => (
@@ -465,54 +479,63 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Level</th>
-                <th>Total Clicks</th>
-                <th>Status</th>
-                <th>Join Date</th>
-                <th>Last Active</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersData.map(user => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="user-info">
-                      <div className="user-avatar">👤</div>
-                      <div className="user-details">
-                        <div className="username">{user.username}</div>
-                        <div className="user-id">ID: {user.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td><span className="level-badge">Level {user.level}</span></td>
-                  <td><span className="click-count">{user.totalClicks.toLocaleString()}</span></td>
-                  <td>
-                    <span className={`status-badge ${user.status}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td>{user.joinDate}</td>
-                  <td>{user.lastActive}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">✏️</button>
-                      <button className="btn-action danger">🚫</button>
-                    </div>
-                  </td>
+        {loadingUsers ? (
+          <div style={{ padding: 24, textAlign: 'center' }}>Đang tải danh sách user...</div>
+        ) : userError ? (
+          <div style={{ color: 'red', padding: 24 }}>{userError}</div>
+        ) : (
+          <div className="table-container" style={{overflowX:'auto',overflowY:'auto',maxWidth:'100vw',maxHeight:'600px',height:'auto',paddingBottom:2}} onMouseEnter={e => {e.currentTarget.style.overflowX='auto'}} onMouseLeave={e => {e.currentTarget.style.overflowX='hidden'}}>
+            <table className="data-table" style={{minWidth:'1200px'}}>
+              <thead>
+                <tr style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>User</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Email</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Total Score</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Roles</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Level</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Avatar</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Bio</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Email Verified</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Status</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Login Fail Count</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Created At</th>
+                  <th style={{position:'sticky',top:0,background:'#f9fbfd',zIndex:2}}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {usersData.length === 0 ? (
+                  <tr><td colSpan="13" style={{textAlign:'center'}}>Không có user nào</td></tr>
+                ) : usersData.map(user => (
+                  <tr key={user._id || user.id}>
+                    <td title={(user.username || user.name || user.email) + ' | ID: ' + (user._id || user.id)}>
+                      <div style={{display:'flex',flexDirection:'column'}}>
+                        <span style={{fontWeight:'bold'}}>{user.username}</span>
+                        <span style={{fontSize:'12px',color:'#888'}}>ID: {user._id || user.id}</span>
+                      </div>
+                    </td>
+                    <td title={user.email}>{user.email}</td>
+                    <td title={String(user.totalScore)}>{user.totalScore}</td>
+                    <td title={Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}>{Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}</td>
+                    <td title={user.level}>{user.level}</td>
+                    <td title={user.avatar}>{user.avatar ? <img src={user.avatar} alt="avatar" style={{width:32,height:32,borderRadius:'50%'}} /> : 'N/A'}</td>
+                    <td title={user.bio}>{user.bio}</td>
+                    <td title={user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}>{user.isEmailVerified ? '✔️' : '❌'}</td>
+                    <td title={user.status}>{user.status && <span className={`status-badge ${user.status || ''}`}>{user.status}</span>}</td>
+                    <td title={String(user.loginFailCount)}>{user.loginFailCount}</td>
+                    <td title={user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}>{user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn-action">👁️</button>
+                        <button className="btn-action">✏️</button>
+                        <button className="btn-action danger">🚫</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -609,7 +632,9 @@ const Admin = () => {
           {activeTab === 'GameSessions' && renderGameSessions()}
           {activeTab === 'Users' && renderUsers()}
           {activeTab === 'AllTimeLeaders' && renderAllTimeLeaders()}
-          {!['Dashboard', 'GameRooms', 'GameSessions', 'Users', 'AllTimeLeaders'].includes(activeTab) && renderDefaultContent()}
+          {activeTab === 'CreateUser' && <CreateUser onSuccess={() => setActiveTab('Users')} />}
+          {activeTab === 'UserManagement' && <UserManagement />}
+          {!['Dashboard', 'GameRooms', 'GameSessions', 'Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
     </div>
