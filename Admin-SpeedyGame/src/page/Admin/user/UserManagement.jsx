@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getUserList } from '../../../services/userService';
-import { deleteUser } from '../../../services/userService';
+import { getUserList } from '../../../services/UserService';
+import { deleteUser } from '../../../services/UserService';
 
 export default function UserManagement() {
   const [search, setSearch] = useState('');

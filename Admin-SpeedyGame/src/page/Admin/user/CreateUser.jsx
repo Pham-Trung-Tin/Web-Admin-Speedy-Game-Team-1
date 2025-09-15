@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createUser } from '../../../services/userService'
+import { createUser } from '../../../services/UserService'
 
 const initialState = {
   username: '',

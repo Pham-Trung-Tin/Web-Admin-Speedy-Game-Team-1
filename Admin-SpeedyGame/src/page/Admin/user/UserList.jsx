@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getUserList } from '../../../services/userService'
+import { getUserList } from '../../../services/UserService'
 import './UserList.css'
 
 const UserList = () => {

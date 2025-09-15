@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authService } from '../../services/authService'
+import { authService } from '../../services/AuthService'
 import CreateUser from './user/CreateUser'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
 import UserList from './user/UserList'
@@ -423,7 +423,7 @@ const Admin = () => {
             </div>
             {showProfileDropdown && (
               <div className="profile-dropdown">
-                <div className="dropdown-item">👤 Profile</div>
+                <div className="dropdown-item" onClick={() => {navigate('/admin/profile'); setShowProfileDropdown(false)}}>👤 Profile</div>
                 <div className="dropdown-item">⚙️ Settings</div>
                 <div className="dropdown-divider"></div>
                 <div className="dropdown-item" onClick={handleLogout}>🚪 Logout</div>

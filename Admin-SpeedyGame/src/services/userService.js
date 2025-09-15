@@ -1,50 +1,59 @@
-// Gọi API xóa user với access token
-export async function deleteUser(id) {
-  const token = localStorage.getItem('access_token');
-  const response = await fetch(`/api/admin/users/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  if (!response.ok) {
-    let errMsg = 'Failed to delete user';
-    try {
-      const err = await response.json();
-      if (err && err.message) errMsg = err.message;
-    } catch {}
-    throw new Error(errMsg);
-  }
-  return response.json();
+// services/UserService.js
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  '/api';
+
+const token = () => localStorage.getItem('access_token') || '';
+
+const headersJson = () => ({
+  'Content-Type': 'application/json',
+  ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
+});
+
+async function parseJsonSafe(res) {
+  try { return await res.json(); } catch { return null; }
 }
-// Gọi API tạo user mới với access token
-export async function createUser(userData) {
-  const token = localStorage.getItem('access_token');
-  const response = await fetch('/api/admin/users', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(userData)
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
+    ...options,
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.message || 'Tạo user thất bại');
+  const data = await parseJsonSafe(res);
+  if (!res.ok || (data && data.ok === false)) {
+    const msg = data?.message || `HTTP ${res.status}`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
-  return response.json();
+  return data;
 }
-// Gọi API lấy danh sách user với access token
+
+// Admin endpoints: list/create/delete users
 export async function getUserList() {
-  const token = localStorage.getItem('access_token');
-  const response = await fetch('/api/admin/users', {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  if (!response.ok) throw new Error('Failed to fetch user list');
-  return response.json();
+  return apiFetch('/admin/users', { method: 'GET', headers: headersJson() });
 }
+
+export async function createUser(userData) {
+  return apiFetch('/admin/users', {
+    method: 'POST',
+    headers: headersJson(),
+    body: JSON.stringify(userData),
+  });
+}
+
+export async function deleteUser(id) {
+  return apiFetch(`/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: headersJson(),
+  });
+}
+
+export default {
+  getUserList,
+  createUser,
+  deleteUser,
+};

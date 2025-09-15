@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import { createRoom } from "../../../services/gameRoomService";
-import { authService } from "../../../services/authService";
+import { authService } from "../../../services/AuthService";
 import "./gameRoom.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";

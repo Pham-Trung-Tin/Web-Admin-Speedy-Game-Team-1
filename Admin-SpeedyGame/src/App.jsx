@@ -4,6 +4,7 @@ import SignUp from "./page/authentication/SignUp";
 import ForgotPassword from "./page/authentication/ForgotPassword";
 import VerifyEmail from "./page/authentication/VerifyEmail";
 import Admin from "./page/Admin/Admin";
+import Profile from "./page/Admin/profileAdmin/Profile";
 import "./App.css";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />       
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );
