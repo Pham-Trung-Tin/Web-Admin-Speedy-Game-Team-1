@@ -125,7 +125,22 @@ export const AuthService = {
 
     return data?.data || data; // typically { avatar: 'https://...' }
   },
+
+  // ---------- GAME HISTORIES ----------
+  // GET /user/game-histories/by-room/{roomCode}?page=&limit=
+  async getUserGameHistoriesByRoom({ roomCode, page = 1, limit = 20 }) {
+    if (!roomCode) throw new Error("roomCode is required");
+    const q = new URLSearchParams({ page: String(page), limit: String(limit) }).toString();
+    const data = await apiFetch(
+      `/user/game-histories/by-room/${encodeURIComponent(roomCode)}?${q}`,
+      { method: "GET", headers: jsonHeaders() }
+    );
+    // Swagger trả trực tiếp { page, limit, total, data: [] } (không bọc ok:true)
+    return data?.data || data;
+  }
 };
+
+
 
 export const authService = AuthService;
 export default AuthService;
