@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthService } from "../../../services/AuthService";
+import GameHistory from "../gameHistory/GameHistory";
+import GameRoomUser from "../gameRoomUser/GameRoomUser";
 import "./Profile.css";
 import "../Admin.css";
 
@@ -355,182 +357,15 @@ const Profile = () => {
     </div>
   );
 
-  const renderSettings = () => (
+  const renderGameHistory = () => (
     <div className="profile-section">
-      <div className="section-header">
-        <h3>Cài đặt tài khoản</h3>
-      </div>
-      <div className="settings-content">
-        <div className="settings-group">
-          <h4>Bảo mật</h4>
-          <div className="setting-item">
-            <div className="setting-info">
-              <strong>Mật khẩu</strong>
-              <p>Cập nhật mật khẩu để bảo mật tài khoản</p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowChangePassword(!showChangePassword)}
-            >
-              🔐 Đổi mật khẩu
-            </button>
-          </div>
-          {showChangePassword && (
-            <div className="password-form">
-              <div className="form-group">
-                <label>Mật khẩu hiện tại</label>
-                <input
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      currentPassword: e.target.value,
-                    })
-                  }
-                  className="form-input"
-                  placeholder="Nhập mật khẩu hiện tại"
-                />
-              </div>
-              <div className="form-group">
-                <label>Mật khẩu mới</label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  className="form-input"
-                  placeholder="Nhập mật khẩu mới"
-                />
-              </div>
-              <div className="form-group">
-                <label>Xác nhận mật khẩu mới</label>
-                <input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="form-input"
-                  placeholder="Nhập lại mật khẩu mới"
-                />
-              </div>
-              <div className="form-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={handleChangePassword}
-                >
-                  ✅ Xác nhận
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowChangePassword(false)}
-                >
-                  ❌ Hủy
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="settings-group">
-          <h4>Thông tin hệ thống</h4>
-          <div className="system-info">
-            <div className="info-item">
-              <span className="info-label">ID:</span>
-              <span className="info-value">{profileData?.id}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Ngày tham gia:</span>
-              <span className="info-value">
-                {profileData?.joinDate
-                  ? new Date(profileData.joinDate).toLocaleDateString("vi-VN")
-                  : "--"}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Lần đăng nhập cuối:</span>
-              <span className="info-value">
-                {profileData?.lastLogin || "--"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="settings-group">
-          <h4>Thống kê hoạt động</h4>
-          <div className="stats-grid">
-            {adminStats.map((stat, idx) => (
-              <div key={idx} className={`stat-card ${stat.color}`}>
-                <div className="stat-icon">{stat.icon}</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stat.value}</div>
-                  <div className="stat-label">{stat.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <GameHistory />
     </div>
   );
 
-  const renderActivity = () => (
+  const renderGameRoom = () => (
     <div className="profile-section">
-      <div className="section-header">
-        <h3>Hoạt động gần đây</h3>
-        <button className="btn btn-secondary">📊 Xem báo cáo chi tiết</button>
-      </div>
-      <div className="activity-content">
-        <div className="activity-timeline">
-          {recentActivities.map((a) => (
-            <div key={a.id} className="timeline-item">
-              <div className={`timeline-icon ${a.type}`}>
-                {a.type === "create"
-                  ? "➕"
-                  : a.type === "update"
-                  ? "✏️"
-                  : a.type === "delete"
-                  ? "🗑️"
-                  : "🔐"}
-              </div>
-              <div className="timeline-content">
-                <div className="activity-title">{a.action}</div>
-                <div className="activity-target">{a.target}</div>
-                <div className="activity-time">{a.time}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="activity-summary">
-          <h4>Tóm tắt hoạt động hôm nay</h4>
-          <div className="summary-stats">
-            <div className="summary-item">
-              <span className="summary-value">12</span>
-              <span className="summary-label">Thao tác thực hiện</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-value">3</span>
-              <span className="summary-label">Phòng game tạo mới</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-value">8</span>
-              <span className="summary-label">Users được quản lý</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-value">2h 45m</span>
-              <span className="summary-label">Thời gian online</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GameRoomUser />
     </div>
   );
 
@@ -645,21 +480,23 @@ const Profile = () => {
                 }`}
                 onClick={() => setActiveSection("settings")}
               >
-                ⚙️ Cài đặt
+                🎮 Game History
               </button>
               <button
                 className={`nav-btn ${
-                  activeSection === "activity" ? "active" : ""
+                  activeSection === "users" ? "active" : ""
                 }`}
-                onClick={() => setActiveSection("activity")}
+                onClick={() => setActiveSection("users")}
               >
-                📊 Hoạt động
+                👥 Room Users
               </button>
+              
             </div>
 
             <div className="profile-content-wrapper">
               {activeSection === "personal" && renderPersonalInfo()}
-              {activeSection === "settings" && renderSettings()}
+              {activeSection === "settings" && renderGameHistory()}
+              {activeSection === "users" && renderGameRoom()}
               {activeSection === "activity" && renderActivity()}
             </div>
           </div>

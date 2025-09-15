@@ -137,7 +137,23 @@ export const AuthService = {
     );
     // Swagger trả trực tiếp { page, limit, total, data: [] } (không bọc ok:true)
     return data?.data || data;
-  }
+  },
+
+  // ---------- GAME ROOMS (của user hiện tại) ----------
+async getUserGameRooms({ page = 1, limit = 20 } = {}) {
+  const q = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  }).toString();
+
+  // Swagger trả về: { page, limit, total, data: [], me: {...} }
+  const data = await apiFetch(`/user/game-rooms?${q}`, {
+    method: 'GET',
+    headers: jsonHeaders(),
+  });
+
+  return data; // KHÔNG unwrap .data vì response đã ở dạng cuối
+}
 };
 
 
