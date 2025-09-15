@@ -9,7 +9,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-
+  const [avatarFile, setAvatarFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -83,37 +83,46 @@ const Profile = () => {
     setSaving(true);
     setError("");
     try {
-      const payload = {
-        fullName: editData.fullName,
-        email: editData.email,
-        phone: editData.phone,
-        bio: editData.bio,
-        location: editData.location,
-        timezone: editData.timezone,
-        // Optional: if backend accepts avatar as URL/base64
-        ...(typeof editData.avatar === "string"
-          ? { avatar: editData.avatar }
-          : {}),
-      };
+      // chỉ backend hỗ trợ: bio + avatar (file). Các field khác giữ nguyên tại UI.
+      const updated = await AuthService.updateProfileMultipart({
+        bio: editData.bio ?? "",
+        avatarFile, // null nếu không đổi ảnh
+      });
 
-      const updated = await AuthService.updateMyProfile(payload);
+      console.log("Updated response:", updated); // Debug log
+
+      // Fetch lại profile để có avatar URL mới nhất
+      const freshProfile = await AuthService.getMyProfile();
+      console.log("Fresh profile:", freshProfile); // Debug log
 
       const mapped = {
-        ...editData,
-        fullName: updated.fullName ?? editData.fullName,
-        email: updated.email ?? editData.email,
-        phone: updated.phone ?? editData.phone,
-        bio: updated.bio ?? editData.bio,
-        location: updated.location ?? editData.location,
-        timezone: updated.timezone ?? editData.timezone,
-        avatar: updated.avatar ?? editData.avatar,
+        id: freshProfile._id || freshProfile.id || profileData.id,
+        username: freshProfile.username || profileData.username,
+        email: freshProfile.email || profileData.email,
+        fullName: freshProfile.fullName || freshProfile.username || profileData.fullName,
+        phone: freshProfile.phone || profileData.phone,
+        role: (Array.isArray(freshProfile.roles) && freshProfile.roles[0]) || freshProfile.role || profileData.role,
+        department: freshProfile.department || profileData.department,
+        joinDate: freshProfile.createdAt || profileData.joinDate,
+        lastLogin: freshProfile.lastLogin || profileData.lastLogin,
+        status: freshProfile.status || profileData.status,
+        avatar: freshProfile.avatar || profileData.avatar, // Dùng avatar mới từ server
+        bio: freshProfile.bio || profileData.bio,
+        location: freshProfile.location || profileData.location,
+        timezone: freshProfile.timezone || profileData.timezone,
+        level: freshProfile.level || profileData.level,
+        totalscore: freshProfile.totalscore || profileData.totalscore,
       };
+
+      console.log("Mapped data:", mapped); // Debug log
 
       setProfileData(mapped);
       setEditData(mapped);
+      setAvatarFile(null); // reset file sau khi lưu
       setIsEditing(false);
       alert("Cập nhật thông tin thành công!");
     } catch (e) {
+      console.error("Save error:", e); // Debug log
       if (e.status === 401) return handleLogout();
       setError(e.message || "Cập nhật thất bại.");
     } finally {
@@ -156,19 +165,12 @@ const Profile = () => {
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Try upload to server first
-    try {
-      const uploaded = await AuthService.uploadAvatar(file); // { avatar: 'url' } or 'url'
-      const avatarUrl = uploaded?.avatar || uploaded;
-      setEditData((prev) => ({ ...prev, avatar: avatarUrl }));
-    } catch {
-      // Fallback: preview base64 (if server upload not available)
-      const reader = new FileReader();
-      reader.onload = (e) =>
-        setEditData((prev) => ({ ...prev, avatar: e.target.result }));
-      reader.readAsDataURL(file);
-    }
+    setAvatarFile(file); // lưu file để gửi lên BE
+    // preview ngay trên UI
+    const reader = new FileReader();
+    reader.onload = (e) =>
+      setEditData((prev) => ({ ...prev, avatar: e.target.result }));
+    reader.readAsDataURL(file);
   };
 
   // Mock activity & stats (unchanged)
@@ -231,17 +233,27 @@ const Profile = () => {
       <div className="profile-content">
         <div className="avatar-section">
           <div className="avatar-container">
-            {editData?.avatar ? (
+            {(editData?.avatar || profileData?.avatar) ? (
               <img
-                src={editData.avatar}
+                src={editData?.avatar || profileData?.avatar}
                 alt="Avatar"
                 className="profile-avatar-large"
+                onError={(e) => {
+                  console.error("Avatar load error:", e.target.src);
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
+            ) : null}
+            {!(editData?.avatar || profileData?.avatar) && (
               <div className="profile-avatar-large placeholder">
                 <span>{editData?.fullName?.charAt(0) || "A"}</span>
               </div>
             )}
+            {/* Fallback placeholder (hidden by default, shown on image error) */}
+            <div className="profile-avatar-large placeholder" style={{ display: 'none' }}>
+              <span>{editData?.fullName?.charAt(0) || "A"}</span>
+            </div>
             {isEditing && (
               <div className="avatar-upload">
                 <input
@@ -269,53 +281,42 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="info-grid">
+        <div className="info-grid info-grid--cards">
           <div className="info-group">
             <label>Username</label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editData?.username || ""}
-                onChange={(e) =>
-                  setEditData({ ...editData, username: e.target.value })
-                }
-                className="form-input"
-              />
-            ) : (
-              <span className="info-value">{profileData?.username}</span>
-            )}
+            <span className="info-value">{profileData?.username}</span>
           </div>
 
           <div className="info-group">
             <label>Email</label>
-            {isEditing ? (
-              <input
-                type="email"
-                value={editData?.email || ""}
-                onChange={(e) =>
-                  setEditData({ ...editData, email: e.target.value })
-                }
-                className="form-input"
-              />
-            ) : (
-              <span className="info-value">{profileData?.email}</span>
-            )}
+            <span className="info-value">{profileData?.email}</span>
           </div>
 
           <div className="info-group">
             <label>Level</label>
-            <span className="info-value">{profileData?.level}</span>
+            <span className="info-value">
+              <span className="chip chip--level">{profileData?.level}</span>
+            </span>
           </div>
 
           <div className="info-group">
             <label>Role</label>
             <span className="info-value">
-              <span className="role-badge admin">{profileData?.role}</span>
+              {/* đổi màu theo role nếu thích: chip--warning cho STAFF, chip--primary cho ADMIN */}
+              <span
+                className={`chip ${
+                  String(profileData?.role).toUpperCase() === "STAFF"
+                    ? "chip--warning"
+                    : "chip--primary"
+                }`}
+              >
+                {profileData?.role}
+              </span>
             </span>
           </div>
         </div>
 
-        <div className="bio-section">
+        <div className="bio-section bio--card">
           <label>Giới thiệu</label>
           {isEditing ? (
             <textarea

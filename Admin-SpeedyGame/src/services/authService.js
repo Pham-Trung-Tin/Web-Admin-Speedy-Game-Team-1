@@ -74,6 +74,24 @@ export const AuthService = {
     return data?.data || data;
   },
 
+  // PATCH /user/profile (multipart: bio + avatar)
+  async updateProfileMultipart({ bio, avatarFile }) {
+    const form = new FormData();
+    if (typeof bio === 'string') form.append('bio', bio);
+    if (avatarFile instanceof File) form.append('avatar', avatarFile);
+
+    const data = await apiFetch('/user/profile', {
+      method: 'PATCH',
+      headers: {
+        // DO NOT set Content-Type for FormData
+        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      },
+      body: form,
+    });
+    // Usually { ok: true, data: {...} }
+    return data?.data || data;
+  },
+
   async updateMyProfile(payload) {
     const data = await apiFetch('/user/me', {
       method: 'PUT', // change if your backend uses PATCH
@@ -92,22 +110,20 @@ export const AuthService = {
   },
 
   // Optional — if backend supports multipart avatar upload
+  // Optional — upload avatar only
   async uploadAvatar(file) {
     const form = new FormData();
     form.append('avatar', file);
 
-    const res = await fetch(`${API_BASE_URL}/user/avatar`, {
+    const data = await apiFetch('/user/avatar', {
       method: 'POST',
-      credentials: 'include',
-      headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      headers: {
+        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      },
       body: form, // don't set Content-Type with FormData
     });
 
-    const json = await parseJsonSafe(res);
-    if (!res.ok || json?.ok === false) {
-      throw new Error(json?.message || `HTTP ${res.status}`);
-    }
-    return json?.data || json; // typically { avatar: 'https://...' }
+    return data?.data || data; // typically { avatar: 'https://...' }
   },
 };
 

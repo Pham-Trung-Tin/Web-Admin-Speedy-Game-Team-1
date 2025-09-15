@@ -741,3 +741,88 @@
     padding: 16px;
   }
 }
+/* ===== Profile: Compact card fields for brief info ===== */
+.info-grid--cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.info-grid--cards .info-group {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.info-grid--cards .info-group:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  transform: translateY(-1px);
+}
+
+.info-grid--cards .info-group label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.info-grid--cards .info-group .info-value {
+  padding: 0;           /* bỏ line dưới cũ */
+  border: 0;
+  font-size: 15px;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Chips (pills) cho Level/Role) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+/* màu gợi ý: */
+.chip--level {
+  background: #e0eaff;   /* xanh nhạt */
+  border-color: #c7d2fe;
+  color: #1d4ed8;
+}
+.chip--primary {         /* ADMIN etc. */
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+.chip--warning {         /* STAFF etc. */
+  background: #fef9c3;
+  border-color: #fde68a;
+  color: #a16207;
+}
+
+/* Bio card trùng style với field card */
+.bio--card .bio-text,
+.bio--card .form-textarea {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.bio--card .bio-text { color: #374151; }
+
+/* Responsive cho lưới */
+@media (max-width: 1200px) {
+  .info-grid--cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .info-grid--cards { grid-template-columns: 1fr; }
+}
