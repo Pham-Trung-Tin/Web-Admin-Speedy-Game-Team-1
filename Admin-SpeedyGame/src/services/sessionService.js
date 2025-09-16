@@ -1,11 +1,8 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-// Xác định baseURL tuỳ môi trường
-const baseURL =
-  import.meta.env.MODE === "development"
-    ? "/api" // dev dùng proxy trong vite.config.js
-    : (import.meta.env.VITE_API_URL || "https://speedycount-staging.amazingtech.cc/api");
+// Xác định baseURL từ file .env
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 // Tạo axios instance
 const api = axios.create({

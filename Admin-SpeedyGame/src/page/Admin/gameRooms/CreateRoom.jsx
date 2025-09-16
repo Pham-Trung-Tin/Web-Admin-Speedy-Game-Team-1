@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { authService } from "../../../services/authService";
 import "./gameRoom.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CreateRoom = () => {
   const [room, setRoom] = useState({

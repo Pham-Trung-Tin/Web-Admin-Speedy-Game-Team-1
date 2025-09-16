@@ -14,9 +14,7 @@ import "./AdminLeaderBoard.css";
 // =====================================
 
 // ---- Config: adapt to your app ----
-const API_BASE =
-  import.meta?.env?.VITE_API_BASE_URL ||
-  "https://speedycount-staging.amazingtech.cc/api"; // include /api
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const ENDPOINTS = {
   allTime: "leaderboard/top",
   period: "leaderboard/top-period",

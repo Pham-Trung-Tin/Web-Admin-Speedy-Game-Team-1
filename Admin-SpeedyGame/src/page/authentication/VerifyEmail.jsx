@@ -13,9 +13,7 @@ const VerifyEmail = () => {
   const location = useLocation();
   const inputRefs = useRef([]);
 
-  const API_BASE =
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://speedycount-staging.amazingtech.cc/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
   // Lấy email từ state được truyền từ SignUp
   useEffect(() => {
     if (location.state?.email) {

@@ -15,6 +15,7 @@ import ListSessions from './ListSessions'
 
 // ---- Config: quyền hạn cho admin ----
 const ALLOWED_ROLES = ["ADMIN", "staff"];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Hàm kiểm tra quyền hạn
 const getUserRoles = () => {
@@ -44,10 +45,10 @@ const fetchDashboardStats = async () => {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   // Parallel fetch for all stats
   const [users, rooms, sessions, completed] = await Promise.all([
-    fetch('/api/admin/users', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/admin/game-rooms', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/game-sessions', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/game-sessions?status=completed', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/admin/users`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/admin/game-rooms`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/game-sessions`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/game-sessions?status=completed`, { headers }).then(r => r.json()).catch(() => ({})),
   ]);
   return {
     users: users.total || (Array.isArray(users.items) ? users.items.length : 0),
@@ -62,7 +63,7 @@ const fetchUserActivityTrends = async () => {
   const token = localStorage.getItem('access_token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   // TODO: Replace with real API if available
-  // const res = await fetch('/api/admin/users/activity?period=7d', { headers });
+  // const res = await fetch(`${API_BASE_URL}/admin/users/activity?period=7d`, { headers });
   // const data = await res.json();
   // return data.days; // [{day: 'Mon', count: 123}, ...]
   // Mock data:
@@ -82,7 +83,7 @@ const fetchRoomTypesDistribution = async () => {
   const token = localStorage.getItem('access_token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   // Fetch all rooms and group by status
-  const res = await fetch('/api/admin/game-rooms', { headers });
+  const res = await fetch(`${API_BASE_URL}/admin/game-rooms`, { headers });
   const data = await res.json();
   const items = data.items || [];
   const counts = { active: 0, waiting: 0, live: 0 };
@@ -100,10 +101,10 @@ const fetchRecentActivities = async () => {
 
   // Fetch data song song
   const [rooms, users, sessions, leaderboard] = await Promise.all([
-    fetch('/api/admin/game-rooms?sort=createdAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/admin/users?sort=createdAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/game-sessions?status=completed&sort=endedAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/leaderboard/top-period?period=week', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/admin/game-rooms?sort=createdAt:desc&limit=1`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/admin/users?sort=createdAt:desc&limit=1`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/game-sessions?status=completed&sort=endedAt:desc&limit=1`, { headers }).then(r => r.json()).catch(() => ({})),
+    fetch(`${API_BASE_URL}/leaderboard/top-period?period=week`, { headers }).then(r => r.json()).catch(() => ({})),
   ]);
 
   const activities = [];

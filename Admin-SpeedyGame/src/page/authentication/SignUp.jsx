@@ -12,7 +12,7 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const handleChange = (e) => {
     setFormData({
       ...formData,

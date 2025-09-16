@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { authService } from "../../../services/authService";
 import "./gameRoom.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const RoomDetail = () => {
   // Lấy room ID từ localStorage thay vì từ params
