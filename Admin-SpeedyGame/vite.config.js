@@ -1,27 +1,27 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       '/api': {
-        target: 'https://speedycount-staging.amazingtech.cc',
-        changeOrigin: true,
-        secure: true,
+        target: 'https://speedycount-staging.amazingtech.cc', // BE server
+        changeOrigin: true, // cần để tránh lỗi CORS
+        secure: true, // true nếu BE dùng HTTPS có SSL hợp lệ
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
+            console.error('🔴 Proxy Error:', err);
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
+            console.log('➡️ Sending Request to Target:', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            console.log('✅ Received Response:', proxyRes.statusCode, req.url);
           });
         },
-      }
-    }
-  }
-})
+      },
+    },
+  },
+});
