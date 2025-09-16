@@ -441,7 +441,7 @@ const Profile = () => {
                 >
                   👤 Profile
                 </div>
-                <div className="dropdown-item">⚙️ Settings</div>
+                {/* <div className="dropdown-item">⚙️ Settings</div> */}
                 <div className="dropdown-divider"></div>
                 <div className="dropdown-item" onClick={handleLogout}>
                   🚪 Logout

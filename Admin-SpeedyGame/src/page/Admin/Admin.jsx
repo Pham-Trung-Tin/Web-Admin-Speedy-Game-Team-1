@@ -155,6 +155,7 @@ const fetchRecentActivities = async () => {
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('Dashboard')
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [userProfile, setUserProfile] = useState(null)
   const [dashboardStats, setDashboardStats] = useState([
     { icon: '👥', value: '...', label: 'Active Users', change: '', color: 'blue' },
     { icon: '🏠', value: '...', label: 'Active Rooms', change: '', color: 'green' },
@@ -170,6 +171,19 @@ const Admin = () => {
   // Kiểm tra quyền hạn
   const roles = getUserRoles();
   const hasAccess = hasAccessByRoles(roles);
+
+  // Load user profile từ localStorage
+  useEffect(() => {
+    try {
+      const userProfileData = localStorage.getItem('user_profile');
+      if (userProfileData) {
+        const profile = JSON.parse(userProfileData);
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  }, []);
 
   // Lắng nghe sự kiện thay đổi tab từ các component con
   useEffect(() => {
@@ -574,13 +588,30 @@ const Admin = () => {
           </div>
           
           <div className="admin-profile" onClick={() => setShowProfileDropdown(!showProfileDropdown)}>
-            <div className="profile-avatar">
-              <span>JD</span>
+            {userProfile?.avatar ? (
+              <img 
+                src={userProfile.avatar} 
+                alt={userProfile.username || userProfile.fullName || 'User'}
+                className="profile-avatar-img"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="profile-avatar" 
+              style={{ display: userProfile?.avatar ? 'none' : 'flex' }}
+            >
+              <span>
+                {userProfile?.fullName?.charAt(0)?.toUpperCase() || 
+                 userProfile?.username?.charAt(0)?.toUpperCase() || 
+                 'A'}
+              </span>
             </div>
             {showProfileDropdown && (
               <div className="profile-dropdown">
                 <div className="dropdown-item" onClick={() => {navigate('/admin/profile'); setShowProfileDropdown(false)}}>👤 Profile</div>
-                <div className="dropdown-item">⚙️ Settings</div>
                 <div className="dropdown-divider"></div>
                 <div className="dropdown-item" onClick={handleLogout}>🚪 Logout</div>
               </div>

@@ -188,7 +188,17 @@
   transition: transform 0.2s;
 }
 
-.profile-avatar:hover {
+.profile-avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+  transition: transform 0.2s;
+}
+
+.profile-avatar:hover,
+.profile-avatar-img:hover {
   transform: scale(1.05);
 }
 
