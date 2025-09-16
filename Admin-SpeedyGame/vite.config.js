@@ -2,10 +2,31 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   base: '/',
+  build: {
+    outDir: 'dist',
+    // Optimize for static site deployment
+    assetsDir: 'assets',
+    sourcemap: false, // Disable sourcemaps for production
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          charts: ['recharts'],
+        },
+      },
+    },
+    // Minify for smaller bundle size
+    minify: 'esbuild', // Use esbuild instead of terser to avoid dependency issues
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [], // Only drop in production
+    },
+  },
   server: {
+    // Keep proxy for development only
     proxy: {
       '/api': {
         target: 'https://speedycount-staging.amazingtech.cc', // BE server
@@ -24,8 +45,10 @@ export default defineConfig({
         },
       },
     },
-    build: {
-    outDir: 'dist'
-  }
+    historyApiFallback: true,
   },
-});
+  // Environment variables optimization
+  define: {
+    __DEV__: JSON.stringify(mode === 'development'),
+  },
+}));

@@ -1,0 +1,3 @@
+# Redirect all routes to index.html for React Router (SPA)
+# This ensures that client-side routing works properly on static site hosting
+/*    /index.html   200
