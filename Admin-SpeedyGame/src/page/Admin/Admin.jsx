@@ -1,13 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../../services/authService'
+import CreateUser from './user/CreateUser'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
+import UserList from './user/UserList'
+import UserManagement from './user/UserManagement'
+import CreateRoom from './gameRooms/CreateRoom'
+import RoomDetail from './gameRooms/RoomDetail'
+import ListRooms from './gameRooms/ListRooms'
 import './Admin.css'
+
+// ---- Config: quyền hạn cho admin ----
+const ALLOWED_ROLES = ["ADMIN", "staff"];
+
+// Hàm kiểm tra quyền hạn
+const getUserRoles = () => {
+  try {
+    const raw = localStorage.getItem('user_profile');
+    if (raw) {
+      const p = JSON.parse(raw);
+      return p.role || p.roles || [];
+    }
+  } catch {}
+  
+  const rawGlobal = (typeof window !== "undefined" &&
+    (window.__USER__?.roles || window.APP_USER?.roles)) || [];
+  return Array.isArray(rawGlobal) ? rawGlobal : [];
+};
+
+const hasAccessByRoles = (roles) => {
+  const norm = roles.map((r) => String(r).toUpperCase());
+  return norm.some((r) =>
+    ALLOWED_ROLES.map((x) => String(x).toUpperCase()).includes(r)
+  );
+};
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('Dashboard')
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const navigate = useNavigate()
+
+  // Kiểm tra quyền hạn
+  const roles = getUserRoles();
+  const hasAccess = hasAccessByRoles(roles);
+
+  // Lắng nghe sự kiện thay đổi tab từ các component con
+  useEffect(() => {
+    const handleTabChange = (event) => {
+      setActiveTab(event.detail);
+    };
+
+    window.addEventListener("changeAdminTab", handleTabChange);
+    
+    return () => {
+      window.removeEventListener("changeAdminTab", handleTabChange);
+    };
+  }, []);
+
+  // Nếu không có quyền, hiển thị thông báo
+  if (!hasAccess) {
+    return (
+      <div className="access-denied">
+        <div className="access-denied-icon">🔒</div>
+        <h1>Access Denied</h1>
+        <p>You don't have permission to access the Admin Panel.</p>
+        <p>Required roles: <strong>ADMIN</strong> or <strong>staff</strong></p>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => navigate('/login')}
+        >
+          Back to Login
+        </button>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -32,8 +98,8 @@ const Admin = () => {
       title: 'Game Rooms (Admin)',
       items: [
         { id: 'GameRooms', icon: '🏠', label: 'List Rooms', active: activeTab === 'GameRooms' },
-        { id: 'CreateRoom', icon: '➕', label: 'Create Room', active: activeTab === 'CreateRoom' },
-        { id: 'RoomDetails', icon: '📋', label: 'Room Details', active: activeTab === 'RoomDetails' }
+        { id: 'CreateRoom', icon: '➕', label: 'Create Room', active: activeTab === 'CreateRoom' }
+        
       ]
     },
     {
@@ -62,9 +128,8 @@ const Admin = () => {
     {
       title: 'Leaderboard',
       items: [
-        { id: 'AllTimeLeaders', icon: '🏆', label: 'Top All-time', active: activeTab === 'AllTimeLeaders' },
-        { id: 'WeeklyLeaders', icon: '📅', label: 'Weekly/Monthly', active: activeTab === 'WeeklyLeaders' },
-        { id: 'PlayerSessions', icon: '🎯', label: 'Player Sessions', active: activeTab === 'PlayerSessions' }
+        { id: 'AllTimeLeaders', icon: '🏆', label: 'Top All-time', active: activeTab === 'AllTimeLeaders' }
+       
       ]
     }
   ]
@@ -97,13 +162,6 @@ const Admin = () => {
     { id: 2, roomName: 'Quick Match Arena', player: 'FastClicker', score: 1592, duration: '08:45', status: 'ongoing', startTime: '15:15' },
     { id: 3, roomName: 'Tournament Final', player: 'ProGamer', score: 3156, duration: '12:11', status: 'completed', startTime: '13:45' },
     { id: 4, roomName: 'Practice Room', player: 'Newbie123', score: 845, duration: '05:33', status: 'ongoing', startTime: '15:45' }
-  ]
-
-  const usersData = [
-    { id: 1, username: 'SpeedMaster99', email: 'speed@example.com', level: 47, totalClicks: 234567, status: 'active', joinDate: '2024-01-15', lastActive: '2 min ago' },
-    { id: 2, username: 'FastClicker', email: 'fast@example.com', level: 32, totalClicks: 156789, status: 'active', joinDate: '2024-02-20', lastActive: '5 min ago' },
-    { id: 3, username: 'ProGamer', email: 'pro@example.com', level: 55, totalClicks: 445632, status: 'active', joinDate: '2023-12-05', lastActive: '1 hour ago' },
-    { id: 4, username: 'Newbie123', email: 'newbie@example.com', level: 8, totalClicks: 12456, status: 'banned', joinDate: '2024-03-10', lastActive: '2 days ago' }
   ]
 
   // Render functions for different sections
@@ -216,93 +274,15 @@ const Admin = () => {
   )
 
   const renderGameRooms = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">Game Rooms Management</h1>
-          <p className="page-subtitle">Manage and monitor all game rooms</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📤 Export</button>
-          <button className="btn btn-primary">➕ Create New Room</button>
-        </div>
-      </div>
+    <ListRooms />
+  )
 
-      <div className="content-section">
-        <div className="table-header">
-          <div className="table-filters">
-            <input type="text" placeholder="🔍 Search rooms..." className="search-input" />
-            <select className="filter-select">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Waiting</option>
-              <option>Live</option>
-              <option>Completed</option>
-            </select>
-            <select className="filter-select">
-              <option>All Types</option>
-              <option>Tournament</option>
-              <option>Casual</option>
-              <option>Practice</option>
-            </select>
-          </div>
-        </div>
+  const renderCreateRoom = () => (
+    <CreateRoom />
+  )
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Room Name</th>
-                <th>Room Code</th>
-                <th>Players</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Creator</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gameRoomsData.map(room => (
-                <tr key={room.id}>
-                  <td>
-                    <div className="room-info">
-                      <div className="room-icon">🏠</div>
-                      <div className="room-name">{room.name}</div>
-                    </div>
-                  </td>
-                  <td><span className="room-code">{room.code}</span></td>
-                  <td>
-                    <span className="player-count">
-                      {room.players}/{room.maxPlayers}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${room.status}`}>
-                      {room.status}
-                    </span>
-                  </td>
-                  <td>{room.created}</td>
-                  <td>{room.creator}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">✏️</button>
-                      <button className="btn-action danger">🗑️</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="pagination">
-          <button className="btn btn-secondary">Previous</button>
-          <span className="pagination-info">Showing 1-4 of 1,429 rooms</span>
-          <button className="btn btn-secondary">Next</button>
-        </div>
-      </div>
-    </div>
+  const renderRoomDetails = () => (
+    <RoomDetail />
   )
 
   const renderGameSessions = () => (
@@ -387,88 +367,7 @@ const Admin = () => {
   )
 
   const renderUsers = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">Users Management</h1>
-          <p className="page-subtitle">Manage and monitor all registered users</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📤 Export Users</button>
-          <button className="btn btn-primary">👤 Add New User</button>
-        </div>
-      </div>
-
-      <div className="content-section">
-        <div className="table-header">
-          <div className="table-filters">
-            <input type="text" placeholder="🔍 Search users..." className="search-input" />
-            <select className="filter-select">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Banned</option>
-              <option>Inactive</option>
-            </select>
-            <select className="filter-select">
-              <option>All Levels</option>
-              <option>Beginner (1-10)</option>
-              <option>Intermediate (11-30)</option>
-              <option>Advanced (31-50)</option>
-              <option>Expert (50+)</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Level</th>
-                <th>Total Clicks</th>
-                <th>Status</th>
-                <th>Join Date</th>
-                <th>Last Active</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersData.map(user => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="user-info">
-                      <div className="user-avatar">👤</div>
-                      <div className="user-details">
-                        <div className="username">{user.username}</div>
-                        <div className="user-id">ID: {user.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td><span className="level-badge">Level {user.level}</span></td>
-                  <td><span className="click-count">{user.totalClicks.toLocaleString()}</span></td>
-                  <td>
-                    <span className={`status-badge ${user.status}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td>{user.joinDate}</td>
-                  <td>{user.lastActive}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">✏️</button>
-                      <button className="btn-action danger">🚫</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <UserList />
   )
 
   const renderAllTimeLeaders = () => (
@@ -560,10 +459,14 @@ const Admin = () => {
         <main className="main-content">
           {activeTab === 'Dashboard' && renderDashboard()}
           {activeTab === 'GameRooms' && renderGameRooms()}
+          {activeTab === 'CreateRoom' && renderCreateRoom()}
+          {activeTab === 'RoomDetails' && renderRoomDetails()}
           {activeTab === 'GameSessions' && renderGameSessions()}
           {activeTab === 'Users' && renderUsers()}
           {activeTab === 'AllTimeLeaders' && renderAllTimeLeaders()}
-          {!['Dashboard', 'GameRooms', 'GameSessions', 'Users', 'AllTimeLeaders'].includes(activeTab) && renderDefaultContent()}
+          {activeTab === 'CreateUser' && <CreateUser onSuccess={() => setActiveTab('Users')} />}
+          {activeTab === 'UserManagement' && <UserManagement />}
+          {!['Dashboard', 'GameRooms', 'CreateRoom', 'RoomDetails', 'GameSessions', 'Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
     </div>

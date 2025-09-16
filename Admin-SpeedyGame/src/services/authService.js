@@ -23,12 +23,12 @@ export const authService = {
 
       // Lưu token vào localStorage nếu API trả về
       if (data.token) {
-        localStorage.setItem('authToken', data.token)
+        localStorage.setItem('access_token', data.token)
       }
 
       // Lưu thông tin user nếu có
       if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('user_profile', JSON.stringify(data.user))
       }
 
       return data
@@ -40,24 +40,24 @@ export const authService = {
 
   // Đăng xuất
   logout: () => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('user')
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('user_profile')
   },
 
   // Kiểm tra token có hợp lệ không
   isAuthenticated: () => {
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('access_token')
     return !!token
   },
 
   // Lấy token
   getToken: () => {
-    return localStorage.getItem('authToken')
+    return localStorage.getItem('access_token')
   },
 
   // Lấy thông tin user
   getUser: () => {
-    const user = localStorage.getItem('user')
+    const user = localStorage.getItem('user_profile')
     return user ? JSON.parse(user) : null
   }
 }

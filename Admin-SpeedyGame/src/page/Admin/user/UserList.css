@@ -1,0 +1,177 @@
+/* UserList specific styles */
+.user-list-container {
+  width: 100%;
+}
+
+.user-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.user-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.user-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.user-stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.user-stat-title {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.user-stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.user-actions-bulk {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.user-table-wrapper {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.user-avatar-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-username {
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-id {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.user-role-badges {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.user-role-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.user-role-badge.admin {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.user-role-badge.user {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.user-role-badge.staff {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+.user-status-verified {
+  color: #10b981;
+}
+
+.user-status-unverified {
+  color: #ef4444;
+}
+
+.user-score {
+  font-weight: 600;
+  color: #059669;
+}
+
+.user-level-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.user-level-badge.beginner {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.user-level-badge.intermediate {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.user-level-badge.advanced {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.user-level-badge.expert {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .user-filters {
+    flex-direction: column;
+  }
+  
+  .user-stats-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-actions-bulk {
+    flex-direction: column;
+  }
+}
