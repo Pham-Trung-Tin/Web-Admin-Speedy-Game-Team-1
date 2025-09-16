@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authService } from '../../services/AuthService'
+import { authService } from '../../services/authService'
 import CreateUser from './user/CreateUser'
 import AdminLeaderBoard from './leaderboard/AdminLeaderBoard'
 import UserList from './user/UserList'
