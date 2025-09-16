@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthService } from "../../../services/AuthService.js";
+import { AuthService } from "../../../services/authService.js";
 import GameHistory from "../gameHistory/GameHistory";
 import GameRoomUser from "../gameRoomUser/GameRoomUser";
 import "./Profile.css";
