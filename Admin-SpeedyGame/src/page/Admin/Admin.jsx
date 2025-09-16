@@ -8,7 +8,10 @@ import UserManagement from './user/UserManagement'
 import CreateRoom from './gameRooms/CreateRoom'
 import RoomDetail from './gameRooms/RoomDetail'
 import ListRooms from './gameRooms/ListRooms'
+import FilterByRoom from "./FilterByRoom";
+import FilterByPlayer from "./FilterByPlayer";
 import './Admin.css'
+import ListSessions from './ListSessions'
 
 // ---- Config: quyền hạn cho admin ----
 const ALLOWED_ROLES = ["ADMIN", "staff"];
@@ -456,84 +459,7 @@ const Admin = () => {
   )
 
   const renderGameSessions = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">Game Sessions</h1>
-          <p className="page-subtitle">Monitor all active and completed game sessions</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📊 Analytics</button>
-          <button className="btn btn-primary">🔄 Refresh</button>
-        </div>
-      </div>
-
-      <div className="content-section">
-        <div className="table-header">
-          <div className="table-filters">
-            <input type="text" placeholder="🔍 Search sessions..." className="search-input" />
-            <select className="filter-select">
-              <option>All Status</option>
-              <option>Ongoing</option>
-              <option>Completed</option>
-              <option>Paused</option>
-            </select>
-            <select className="filter-select">
-              <option>All Rooms</option>
-              <option>Speed Championship</option>
-              <option>Quick Match Arena</option>
-              <option>Tournament Final</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Session ID</th>
-                <th>Room</th>
-                <th>Player</th>
-                <th>Score</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Start Time</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gameSessionsData.map(session => (
-                <tr key={session.id}>
-                  <td><span className="session-id">#{session.id}</span></td>
-                  <td>{session.roomName}</td>
-                  <td>
-                    <div className="player-info">
-                      <div className="player-avatar">👤</div>
-                      <span>{session.player}</span>
-                    </div>
-                  </td>
-                  <td><span className="score">{session.score.toLocaleString()}</span></td>
-                  <td>{session.duration}</td>
-                  <td>
-                    <span className={`status-badge ${session.status}`}>
-                      {session.status}
-                    </span>
-                  </td>
-                  <td>{session.startTime}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-action">👁️</button>
-                      <button className="btn-action">📊</button>
-                      <button className="btn-action">📤</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+   <ListSessions/>
   )
 
   const renderUsers = () => (
@@ -649,11 +575,13 @@ const Admin = () => {
           {activeTab === 'CreateRoom' && renderCreateRoom()}
           {activeTab === 'RoomDetails' && renderRoomDetails()}
           {activeTab === 'GameSessions' && renderGameSessions()}
+          {activeTab === 'SessionsByRoom' && <FilterByRoom />}
+          {activeTab === 'SessionsByPlayer' && <FilterByPlayer />}
           {activeTab === 'Users' && renderUsers()}
           {activeTab === 'AllTimeLeaders' && renderAllTimeLeaders()}
           {activeTab === 'CreateUser' && <CreateUser onSuccess={() => setActiveTab('Users')} />}
           {activeTab === 'UserManagement' && <UserManagement />}
-          {!['Dashboard', 'GameRooms', 'CreateRoom', 'RoomDetails', 'GameSessions', 'Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
+          {!['Dashboard', 'GameRooms', 'CreateRoom', 'RoomDetails', 'GameSessions', 'SessionsByRoom','SessionsByPlayer','Users', 'AllTimeLeaders', 'CreateUser', 'UserManagement'].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
     </div>
