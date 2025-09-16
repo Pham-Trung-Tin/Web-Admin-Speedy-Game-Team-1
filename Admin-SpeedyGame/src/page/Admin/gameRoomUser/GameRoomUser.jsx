@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { AuthService } from "../../../services/AuthService";
+import { AuthService } from "../../../services/authService";
 import "./GameRoomUser.css";
 
 const GameRoomUser = () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { authService } from "../../../services/AuthService";
+import { authService } from "../../../services/authService";
 import "./gameRoom.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";

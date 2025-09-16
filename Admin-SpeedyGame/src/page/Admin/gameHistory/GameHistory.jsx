@@ -1,6 +1,6 @@
 // src/pages/Admin/Profile/GameHistory.jsx
 import { useState, useMemo } from "react";
-import { AuthService } from "../../../services/AuthService";
+import { AuthService } from "../../../services/authService";
 import "./GameHistory.css";
 
 const GameHistory = () => {
