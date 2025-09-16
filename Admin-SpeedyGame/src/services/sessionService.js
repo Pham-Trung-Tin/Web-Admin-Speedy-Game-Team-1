@@ -1,5 +1,5 @@
 import axios from "axios";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 // Xác định baseURL tuỳ môi trường
 const baseURL =
