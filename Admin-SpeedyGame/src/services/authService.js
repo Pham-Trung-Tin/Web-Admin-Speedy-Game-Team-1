@@ -1,6 +1,4 @@
 // services/AuthService.js
-
-// Base URL: dev uses Vite proxy "/api", prod can set full domain
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||

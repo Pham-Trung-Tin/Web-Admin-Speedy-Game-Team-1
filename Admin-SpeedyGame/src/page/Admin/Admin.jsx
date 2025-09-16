@@ -294,13 +294,6 @@ const Admin = () => {
       ]
     },
     {
-      title: 'Auth Management',
-      items: [
-        { id: 'AuthSettings', icon: '🔐', label: 'Auth Settings', active: activeTab === 'AuthSettings' },
-        { id: 'PasswordReset', icon: '🔑', label: 'Reset Password', active: activeTab === 'PasswordReset' }
-      ]
-    },
-    {
       title: 'Leaderboard',
       items: [
         { id: 'AllTimeLeaders', icon: '🏆', label: 'Top All-time', active: activeTab === 'AllTimeLeaders' }
