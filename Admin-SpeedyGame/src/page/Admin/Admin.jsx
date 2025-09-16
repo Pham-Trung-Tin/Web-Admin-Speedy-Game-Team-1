@@ -35,9 +35,136 @@ const hasAccessByRoles = (roles) => {
   );
 };
 
+// --- API fetch functions ---
+const fetchDashboardStats = async () => {
+  const token = localStorage.getItem('access_token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  // Parallel fetch for all stats
+  const [users, rooms, sessions, completed] = await Promise.all([
+    fetch('/api/admin/users', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/admin/game-rooms', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/game-sessions', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/game-sessions?status=completed', { headers }).then(r => r.json()).catch(() => ({})),
+  ]);
+  return {
+    users: users.total || (Array.isArray(users.items) ? users.items.length : 0),
+    rooms: rooms.total || (Array.isArray(rooms.items) ? rooms.items.length : 0),
+    sessions: sessions.total || (Array.isArray(sessions.items) ? sessions.items.length : 0),
+    completed: completed.total || (Array.isArray(completed.items) ? completed.items.length : 0),
+  };
+};
+
+// Fetch user activity trends (7 days)
+const fetchUserActivityTrends = async () => {
+  const token = localStorage.getItem('access_token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  // TODO: Replace with real API if available
+  // const res = await fetch('/api/admin/users/activity?period=7d', { headers });
+  // const data = await res.json();
+  // return data.days; // [{day: 'Mon', count: 123}, ...]
+  // Mock data:
+  return [
+    { day: 'Mon', count: 120 },
+    { day: 'Tue', count: 180 },
+    { day: 'Wed', count: 90 },
+    { day: 'Thu', count: 200 },
+    { day: 'Fri', count: 150 },
+    { day: 'Sat', count: 170 },
+    { day: 'Sun', count: 210 }
+  ];
+};
+
+// Fetch room types distribution
+const fetchRoomTypesDistribution = async () => {
+  const token = localStorage.getItem('access_token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  // Fetch all rooms and group by status
+  const res = await fetch('/api/admin/game-rooms', { headers });
+  const data = await res.json();
+  const items = data.items || [];
+  const counts = { active: 0, waiting: 0, live: 0 };
+  items.forEach(room => {
+    if (room.status === 'active') counts.active += 1;
+    else if (room.status === 'waiting') counts.waiting += 1;
+    else if (room.status === 'live') counts.live += 1;
+  });
+  return counts;
+};
+
+const fetchRecentActivities = async () => {
+  const token = localStorage.getItem('access_token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // Fetch data song song
+  const [rooms, users, sessions, leaderboard] = await Promise.all([
+    fetch('/api/admin/game-rooms?sort=createdAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/admin/users?sort=createdAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/game-sessions?status=completed&sort=endedAt:desc&limit=1', { headers }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/leaderboard/top-period?period=week', { headers }).then(r => r.json()).catch(() => ({})),
+  ]);
+
+  const activities = [];
+
+  // New room created
+  if (rooms.items && rooms.items[0]) {
+    activities.push({
+      id: 'room',
+      type: 'room',
+      message: `New room "${rooms.items[0].name}" created`,
+      time: rooms.items[0].createdAt ? new Date(rooms.items[0].createdAt).toLocaleString() : '',
+      user: rooms.items[0].createdBy || 'Admin'
+    });
+  }
+
+  // New user joined
+  if (users.items && users.items[0]) {
+    activities.push({
+      id: 'user',
+      type: 'user',
+      message: `User "${users.items[0].username || users.items[0].email}" joined the platform`,
+      time: users.items[0].createdAt ? new Date(users.items[0].createdAt).toLocaleString() : '',
+      user: 'System'
+    });
+  }
+
+  // Game session completed
+  if (sessions.items && sessions.items[0]) {
+    activities.push({
+      id: 'session',
+      type: 'session',
+      message: `Game session #${sessions.items[0].id} completed`,
+      time: sessions.items[0].endedAt ? new Date(sessions.items[0].endedAt).toLocaleString() : '',
+      user: 'System'
+    });
+  }
+
+  // New weekly champion
+  if (leaderboard.items && leaderboard.items[0]) {
+    activities.push({
+      id: 'leaderboard',
+      type: 'leaderboard',
+      message: `New weekly champion: ${leaderboard.items[0].username || leaderboard.items[0].name}`,
+      time: new Date().toLocaleString(),
+      user: 'System'
+    });
+  }
+
+  return activities;
+};
+
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('Dashboard')
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [dashboardStats, setDashboardStats] = useState([
+    { icon: '👥', value: '...', label: 'Active Users', change: '', color: 'blue' },
+    { icon: '🏠', value: '...', label: 'Active Rooms', change: '', color: 'green' },
+    { icon: '🎮', value: '...', label: 'Game Sessions', change: '', color: 'purple' },
+    { icon: '🏆', value: '...', label: 'Completed Games', change: '', color: 'orange' }
+  ]);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [userTrends, setUserTrends] = useState([]);
+  const [roomTypes, setRoomTypes] = useState({ active: 0, waiting: 0, live: 0 });
+  const [recentActivities, setRecentActivities] = useState([]);
   const navigate = useNavigate()
 
   // Kiểm tra quyền hạn
@@ -56,6 +183,37 @@ const Admin = () => {
       window.removeEventListener("changeAdminTab", handleTabChange);
     };
   }, []);
+
+  // Fetch dashboard stats on mount or refresh
+  const loadStats = async () => {
+    setLoadingStats(true);
+    const stats = await fetchDashboardStats();
+    setDashboardStats([
+      { icon: '👥', value: stats.users.toLocaleString(), label: 'Active Users', change: '', color: 'blue' },
+      { icon: '🏠', value: stats.rooms.toLocaleString(), label: 'Active Rooms', change: '', color: 'green' },
+      { icon: '🎮', value: stats.sessions.toLocaleString(), label: 'Game Sessions', change: '', color: 'purple' },
+      { icon: '🏆', value: stats.completed.toLocaleString(), label: 'Completed Games', change: '', color: 'orange' }
+    ]);
+    setLoadingStats(false);
+  };
+
+  // Fetch charts data
+  useEffect(() => {
+    fetchUserActivityTrends().then(setUserTrends);
+    fetchRoomTypesDistribution().then(setRoomTypes);
+  }, []);
+
+  // Fetch recent activities
+  useEffect(() => {
+    fetchRecentActivities().then(setRecentActivities);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'Dashboard') {
+      loadStats();
+    }
+    // eslint-disable-next-line
+  }, [activeTab]);
 
   // Nếu không có quyền, hiển thị thông báo
   if (!hasAccess) {
@@ -134,34 +292,12 @@ const Admin = () => {
     }
   ]
 
-  // Mock data for different sections
-  const dashboardStats = [
-    { icon: '👥', value: '12,847', label: 'Active Users', change: '+12.5%', color: 'blue' },
-    { icon: '🏠', value: '1,429', label: 'Active Rooms', change: '+8.2%', color: 'green' },
-    { icon: '🎮', value: '3,247', label: 'Game Sessions', change: '+15.3%', color: 'purple' },
-    { icon: '🏆', value: '847', label: 'Completed Games', change: '+23.1%', color: 'orange' }
-  ]
-
-  const recentActivities = [
+  // Recent activities vẫn dùng mock, bạn có thể fetch thêm nếu muốn
+  const recentActivitiesMock = [
     { id: 1, type: 'room', message: 'New room "Speed Championship" created', time: '5 min ago', user: 'Admin' },
     { id: 2, type: 'user', message: 'User "SpeedMaster99" joined the platform', time: '12 min ago', user: 'System' },
     { id: 3, type: 'session', message: 'Game session #1429 completed', time: '18 min ago', user: 'System' },
     { id: 4, type: 'leaderboard', message: 'New weekly champion: FastClicker', time: '25 min ago', user: 'System' }
-  ]
-
-  // Sample data for game rooms
-  const gameRoomsData = [
-    { id: 1, name: 'Speed Championship', code: 'SC001', players: 24, maxPlayers: 32, status: 'active', created: '2024-09-10', creator: 'Admin' },
-    { id: 2, name: 'Quick Match Arena', code: 'QM002', players: 8, maxPlayers: 16, status: 'waiting', created: '2024-09-10', creator: 'ProGamer' },
-    { id: 3, name: 'Tournament Final', code: 'TF003', players: 16, maxPlayers: 16, status: 'live', created: '2024-09-09', creator: 'Admin' },
-    { id: 4, name: 'Practice Room', code: 'PR004', players: 3, maxPlayers: 8, status: 'active', created: '2024-09-09', creator: 'Newbie123' }
-  ]
-
-  const gameSessionsData = [
-    { id: 1, roomName: 'Speed Championship', player: 'SpeedMaster99', score: 2847, duration: '15:23', status: 'completed', startTime: '14:30' },
-    { id: 2, roomName: 'Quick Match Arena', player: 'FastClicker', score: 1592, duration: '08:45', status: 'ongoing', startTime: '15:15' },
-    { id: 3, roomName: 'Tournament Final', player: 'ProGamer', score: 3156, duration: '12:11', status: 'completed', startTime: '13:45' },
-    { id: 4, roomName: 'Practice Room', player: 'Newbie123', score: 845, duration: '05:33', status: 'ongoing', startTime: '15:45' }
   ]
 
   // Render functions for different sections
@@ -174,7 +310,9 @@ const Admin = () => {
         </div>
         <div className="page-actions">
           <button className="btn btn-secondary">📊 View Reports</button>
-          <button className="btn btn-primary">🔄 Refresh Data</button>
+          <button className="btn btn-primary" onClick={loadStats} disabled={loadingStats}>
+            {loadingStats ? 'Loading...' : '🔄 Refresh Data'}
+          </button>
         </div>
       </div>
 
@@ -184,7 +322,7 @@ const Admin = () => {
           <div key={index} className={`stat-card ${stat.color}`}>
             <div className="stat-header">
               <div className="stat-icon">{stat.icon}</div>
-              <span className="stat-change positive">{stat.change}</span>
+              {stat.change && <span className="stat-change positive">{stat.change}</span>}
             </div>
             <div className="stat-content">
               <div className="stat-value">{stat.value}</div>
@@ -207,13 +345,18 @@ const Admin = () => {
           </div>
           <div className="chart-placeholder">
             <div className="bar-chart">
-              <div className="bar" style={{height: '60%'}}><span>Mon</span></div>
-              <div className="bar" style={{height: '80%'}}><span>Tue</span></div>
-              <div className="bar" style={{height: '45%'}}><span>Wed</span></div>
-              <div className="bar" style={{height: '90%'}}><span>Thu</span></div>
-              <div className="bar" style={{height: '70%'}}><span>Fri</span></div>
-              <div className="bar" style={{height: '85%'}}><span>Sat</span></div>
-              <div className="bar" style={{height: '95%'}}><span>Sun</span></div>
+              {userTrends.map((item, idx) => (
+                <div
+                  key={item.day}
+                  className="bar"
+                  style={{
+                    height: `${Math.max(10, (item.count / Math.max(...userTrends.map(u => u.count), 1)) * 100)}%`
+                  }}
+                >
+                  <span>{item.day}</span>
+                  <div className="bar-value">{item.count}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -224,21 +367,30 @@ const Admin = () => {
           </div>
           <div className="pie-chart">
             <div className="pie-center">
-              <div className="pie-value">1,429</div>
+              <div className="pie-value">
+                {roomTypes.active + roomTypes.waiting + roomTypes.live}
+              </div>
               <div className="pie-label">Total Rooms</div>
             </div>
+            {/* Pie chart can be improved with a real chart lib, here is a simple legend */}
             <div className="pie-legend">
               <div className="legend-item">
                 <span className="legend-color active"></span>
-                <span>Active (60%)</span>
+                <span>
+                  Active ({roomTypes.active} - {Math.round((roomTypes.active / Math.max(1, roomTypes.active + roomTypes.waiting + roomTypes.live)) * 100)}%)
+                </span>
               </div>
               <div className="legend-item">
                 <span className="legend-color waiting"></span>
-                <span>Waiting (25%)</span>
+                <span>
+                  Waiting ({roomTypes.waiting} - {Math.round((roomTypes.waiting / Math.max(1, roomTypes.active + roomTypes.waiting + roomTypes.live)) * 100)}%)
+                </span>
               </div>
               <div className="legend-item">
                 <span className="legend-color live"></span>
-                <span>Live (15%)</span>
+                <span>
+                  Live ({roomTypes.live} - {Math.round((roomTypes.live / Math.max(1, roomTypes.active + roomTypes.waiting + roomTypes.live)) * 100)}%)
+                </span>
               </div>
             </div>
           </div>
@@ -252,7 +404,7 @@ const Admin = () => {
           <button className="btn-link">View All</button>
         </div>
         <div className="activity-list">
-          {recentActivities.map(activity => (
+          {recentActivities.length > 0 ? recentActivities.map(activity => (
             <div key={activity.id} className="activity-item">
               <div className={`activity-icon ${activity.type}`}>
                 {activity.type === 'room' ? '🏠' : 
@@ -267,7 +419,11 @@ const Admin = () => {
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="no-activities">
+              <p>No recent activities found.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
