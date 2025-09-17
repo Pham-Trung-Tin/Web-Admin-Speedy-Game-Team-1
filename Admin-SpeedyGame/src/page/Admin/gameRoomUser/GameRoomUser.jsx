@@ -50,7 +50,7 @@ const GameRoomUser = () => {
         limit: Number(res.limit) || payload.limit,
       }));
     } catch (err) {
-      setError(err.message || "Có lỗi xảy ra khi tải danh sách rooms");
+      setError(err.message || "Error fetching GameRoomUser data");
       setResult((r) => ({ ...r, data: [], total: 0 }));
       console.error("GameRoomUser search error:", err);
     } finally {
@@ -75,7 +75,7 @@ const GameRoomUser = () => {
       alert("Đã copy JSON response!");
     } catch (err) {
       console.error("Failed to copy:", err);
-      alert("Không thể copy JSON");
+      alert("Failed to copy JSON");
     }
   };
 
@@ -98,7 +98,7 @@ const GameRoomUser = () => {
     <div className="game-room-user-container">
       <div className="game-room-user-header">
         <h3>👥 Game Room Users</h3>
-        <p>Danh sách phòng mà user đang tham gia (kèm tổng quan của bạn)</p>
+        <p>List of rooms the user is participating in (including your overview)</p>
       </div>
 
       {/* Search form */}
@@ -135,7 +135,7 @@ const GameRoomUser = () => {
 
           <div className="form-actions">
             <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? "Đang tải..." : "🔍 Tải danh sách"}
+              {loading ? "Loading..." : "🔍 Load List"}
             </button>
             <button type="button" className="btn btn-secondary" onClick={reset} disabled={loading}>
               🔄 Reset
@@ -179,7 +179,7 @@ const GameRoomUser = () => {
       {/* Result */}
       <div className="results-section">
         <div className="results-header">
-          <h4>Danh sách Rooms</h4>
+          <h4>Room List</h4>
           <div className="results-info">
             <span className="info-badge">Page: {result.page}</span>
             <span className="info-badge">Limit: {result.limit}</span>
@@ -191,13 +191,13 @@ const GameRoomUser = () => {
           {loading ? (
             <div className="loading-state">
               <div className="loading-spinner" />
-              <p>Đang tải dữ liệu...</p>
+              <p>Loading data...</p>
             </div>
           ) : !result.data?.length ? (
             <div className="empty-state">
               <div className="empty-icon">👥</div>
-              <h5>Không có dữ liệu rooms</h5>
-              <p>Chưa có phòng nào bạn đang tham gia.</p>
+              <h5>No room data available</h5>
+              <p>You are not participating in any rooms.</p>
             </div>
           ) : (
             <div className="data-table">
@@ -235,21 +235,21 @@ const GameRoomUser = () => {
         <div className="pagination">
           <div className="pagination-info">
             {result.total > 0 ? (
-              <>Trang {result.page} / {totalPages}</>
+              <>Page {result.page} / {totalPages}</>
             ) : (
-              <>Trang {result.page}</>
+              <>Page {result.page}</>
             )}
           </div>
           <div className="pagination-controls">
             <button className="btn btn-sm" onClick={gotoPrev} disabled={loading || result.page <= 1}>
-              ← Trước
+              ← Previous
             </button>
             <button
               className="btn btn-sm"
               onClick={gotoNext}
               disabled={loading || (result.total > 0 && result.page >= totalPages)}
             >
-              Sau →
+              Next →
             </button>
           </div>
         </div>

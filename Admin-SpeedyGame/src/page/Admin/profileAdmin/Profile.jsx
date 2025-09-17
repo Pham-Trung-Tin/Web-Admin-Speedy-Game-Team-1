@@ -122,11 +122,11 @@ const Profile = () => {
       setEditData(mapped);
       setAvatarFile(null); // reset file sau khi lưu
       setIsEditing(false);
-      alert("Cập nhật thông tin thành công!");
+      alert("Profile updated successfully!");
     } catch (e) {
       console.error("Save error:", e); // Debug log
       if (e.status === 401) return handleLogout();
-      setError(e.message || "Cập nhật thất bại.");
+      setError(e.message || "Update failed.");
     } finally {
       setSaving(false);
     }
@@ -137,32 +137,32 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-    if (passwordData.newPassword.length < 6) {
-      alert("Mật khẩu phải có ít nhất 6 ký tự!");
-      return;
-    }
-    try {
-      await AuthService.changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
-      alert("Đổi mật khẩu thành công!");
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setShowChangePassword(false);
-    } catch (e) {
-      if (e.status === 401) return handleLogout();
-      alert(e.message || "Đổi mật khẩu thất bại!");
-    }
-  };
+  // const handleChangePassword = async () => {
+  //   if (passwordData.newPassword !== passwordData.confirmPassword) {
+  //     alert("Mật khẩu xác nhận không khớp!");
+  //     return;
+  //   }
+  //   if (passwordData.newPassword.length < 6) {
+  //     alert("Mật khẩu phải có ít nhất 6 ký tự!");
+  //     return;
+  //   }
+  //   try {
+  //     await AuthService.changePassword({
+  //       currentPassword: passwordData.currentPassword,
+  //       newPassword: passwordData.newPassword,
+  //     });
+  //     alert("Đổi mật khẩu thành công!");
+  //     setPasswordData({
+  //       currentPassword: "",
+  //       newPassword: "",
+  //       confirmPassword: "",
+  //     });
+  //     setShowChangePassword(false);
+  //   } catch (e) {
+  //     if (e.status === 401) return handleLogout();
+  //     alert(e.message || "Đổi mật khẩu thất bại!");
+  //   }
+  // };
 
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -222,13 +222,13 @@ const Profile = () => {
   const renderPersonalInfo = () => (
     <div className="profile-section">
       <div className="section-header">
-        <h3>Thông tin cá nhân</h3>
+        <h3>Personal Information</h3>
         <button
           className={`btn ${isEditing ? "btn-secondary" : "btn-primary"}`}
           onClick={isEditing ? handleCancelEdit : () => setIsEditing(true)}
           disabled={saving}
         >
-          {isEditing ? "❌ Hủy" : "✏️ Chỉnh sửa"}
+          {isEditing ? "❌ Cancel" : "✏️ Edit"}
         </button>
       </div>
 
@@ -266,7 +266,7 @@ const Profile = () => {
                   hidden
                 />
                 <label htmlFor="avatar-upload" className="upload-btn">
-                  📷 Đổi ảnh
+                  📷 Change Avatar
                 </label>
               </div>
             )}
@@ -277,8 +277,8 @@ const Profile = () => {
             ></span>
             <span className="status-text">
               {(profileData?.status || "active") === "active"
-                ? "Đang hoạt động"
-                : "Không hoạt động"}
+                ? "Active"
+                : "Inactive"}
             </span>
           </div>
         </div>
@@ -319,7 +319,7 @@ const Profile = () => {
         </div>
 
         <div className="bio-section bio--card">
-          <label>Giới thiệu</label>
+          <label>Introduction</label>
           {isEditing ? (
             <textarea
               value={editData?.bio || ""}
@@ -328,7 +328,7 @@ const Profile = () => {
               }
               className="form-textarea"
               rows="4"
-              placeholder="Viết vài dòng giới thiệu về bản thân..."
+              placeholder="Write a few lines introducing yourself..."
             />
           ) : (
             <p className="bio-text">{profileData?.bio}</p>
@@ -342,14 +342,14 @@ const Profile = () => {
               onClick={handleSaveProfile}
               disabled={saving}
             >
-              {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
+              {saving ? "Saving..." : "💾 Save Change"}
             </button>
             <button
               className="btn btn-secondary"
               onClick={handleCancelEdit}
               disabled={saving}
             >
-              ❌ Hủy bỏ
+              ❌ Cancel
             </button>
           </div>
         )}
@@ -372,7 +372,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="admin-container">
-        <div className="loading">Đang tải hồ sơ…</div>
+        <div className="loading">Loading Profile…</div>
       </div>
     );
   }
@@ -385,7 +385,7 @@ const Profile = () => {
             className="btn btn-secondary"
             onClick={() => window.location.reload()}
           >
-            Thử lại
+            🔄 Retry
           </button>
         </div>
       </div>
@@ -405,7 +405,7 @@ const Profile = () => {
 
         <div className="header-right">
           <button className="btn btn-secondary" onClick={handleBackToAdmin}>
-            ← Quay lại Admin
+            ← Back to Admin
           </button>
 
           <div className="search-container">
@@ -458,9 +458,9 @@ const Profile = () => {
           <div className="profile-container">
             <div className="profile-header">
               <div className="profile-title-section">
-                <h1 className="profile-title">Hồ sơ Admin</h1>
+                <h1 className="profile-title">Admin Profile</h1>
                 <p className="profile-subtitle">
-                  Quản lý thông tin cá nhân và cài đặt tài khoản
+                 Manage personal information and account settings
                 </p>
               </div>
             </div>
@@ -472,7 +472,7 @@ const Profile = () => {
                 }`}
                 onClick={() => setActiveSection("personal")}
               >
-                👤 Thông tin cá nhân
+                👤 Personal Information
               </button>
               <button
                 className={`nav-btn ${

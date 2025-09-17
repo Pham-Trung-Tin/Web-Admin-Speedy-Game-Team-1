@@ -28,7 +28,7 @@ const GameHistory = () => {
   const search = async (opts) => {
     const payload = { ...form, ...(opts || {}) };
     if (!payload.roomCode.trim()) {
-      setError("Vui lòng nhập Room Code");
+      setError("Room Code is required");
       return;
     }
     setLoading(true);
@@ -47,7 +47,7 @@ const GameHistory = () => {
       });
       setForm((p) => ({ ...p, page: data.page ?? payload.page, limit: data.limit ?? payload.limit }));
     } catch (err) {
-      setError(err.message || "Có lỗi xảy ra khi tìm kiếm dữ liệu");
+      setError(err.message || "An error occurred while searching for data");
       setResult((r) => ({ ...r, data: [], total: 0 }));
       console.error("GameHistory search error:", err);
     } finally {
@@ -96,7 +96,7 @@ const GameHistory = () => {
     <div className="game-history-container">
       <div className="game-history-header">
         <h3>🎮 Game History</h3>
-        <p>Tra cứu lịch sử game theo Room Code</p>
+        <p>Search game history by Room Code</p>
       </div>
 
       {/* Search form */}
@@ -113,7 +113,7 @@ const GameHistory = () => {
                 name="roomCode"
                 value={form.roomCode}
                 onChange={onChange}
-                placeholder="Nhập Room Code (ví dụ: R002)"
+                placeholder="Enter Room Code (e.g., R002)"
                 className="form-input"
                 onKeyDown={(e) => e.key === "Enter" && onSubmit(e)}
               />
@@ -149,7 +149,7 @@ const GameHistory = () => {
 
           <div className="form-actions">
             <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? "Đang tìm kiếm..." : "🔍 Tìm kiếm"}
+              {loading ? "Searching..." : "🔍 Search"}
             </button>
             <button type="button" className="btn btn-secondary" onClick={reset} disabled={loading}>
               🔄 Reset
@@ -169,7 +169,7 @@ const GameHistory = () => {
       {/* Result */}
       <div className="results-section">
         <div className="results-header">
-          <h4>Kết quả tìm kiếm</h4>
+          <h4>Search Results</h4>
           <div className="results-info">
             <span className="info-badge">Page: {result.page}</span>
             <span className="info-badge">Limit: {result.limit}</span>
@@ -181,15 +181,15 @@ const GameHistory = () => {
           {loading ? (
             <div className="loading-state">
               <div className="loading-spinner" />
-              <p>Đang tải dữ liệu...</p>
+              <p>Loading data...</p>
             </div>
           ) : !result.data?.length ? (
             <div className="empty-state">
               <div className="empty-icon">📊</div>
-              <h5>Không có dữ liệu game</h5>
-              <p>Room Code "{form.roomCode}" chưa có lịch sử game nào.</p>
+              <h5>No game data available</h5>
+              <p>Room Code "{form.roomCode}" has no game history.</p>
               <p className="empty-hint">
-                💡 Hãy thử chơi một game trong room này hoặc kiểm tra lại Room Code
+                💡 Try playing a game in this room or check the Room Code
               </p>
             </div>
           ) : (
@@ -255,15 +255,15 @@ const GameHistory = () => {
           <div className="pagination-info">
             {result.total > 0 ? (
               <>
-                Trang {result.page} / {totalPages}
+                Page {result.page} / {totalPages}
               </>
             ) : (
-              <>Trang {result.page}</>
+              <>Page {result.page}</>
             )}
           </div>
           <div className="pagination-controls">
             <button className="btn btn-sm" onClick={gotoPrev} disabled={loading || result.page <= 1}>
-              ← Trước
+              ← Previous
             </button>
             <button
               className="btn btn-sm"
@@ -273,7 +273,7 @@ const GameHistory = () => {
                 (result.total > 0 && result.page >= totalPages)
               }
             >
-              Sau →
+              Next →
             </button>
           </div>
         </div>
