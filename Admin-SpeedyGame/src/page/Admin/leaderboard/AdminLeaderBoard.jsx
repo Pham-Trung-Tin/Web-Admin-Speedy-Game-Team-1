@@ -3,17 +3,12 @@ import axios from "axios";
 import "./AdminLeaderBoard.css";
 
 // =====================================
-// Leaderboard Page
-// - Supports admin payload shape:
-//   {
-//     mode: "all-time",
-//     total: number,
-//     items: [{ rank, userId, username, avatar, level, totalScore }]
-//   }
-// - Fallback demo data so you can preview without API
+// Leaderboard Page (Rank is ORIGINAL)
+// - Rank column always shows original rank (_origRank)
+// - Sorting by "Rank" uses _origRank
+// - Sorting by other columns does NOT change rank values
 // =====================================
 
-// ---- Config: adapt to your app ----
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const ENDPOINTS = {
   allTime: "leaderboard/top",
@@ -28,7 +23,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Optional: attach auth token if your app uses it
 api.interceptors.request.use((config) => {
   const token = window?.localStorage?.getItem?.("access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -38,15 +32,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (err) => {
-    // Normalize network errors
     if (err.response) return Promise.reject(err);
-    return Promise.reject(
-      new Error("Network error. Please check your connection.")
-    );
+    return Promise.reject(new Error("Network error. Please check your connection."));
   }
 );
 
-// ---- Types ----
+// ---- Helpers/Types ----
 /** @typedef {Object} Player */
 /** @typedef {{
  *  rank?: number,
@@ -57,17 +48,15 @@ api.interceptors.response.use(
  *  games?: number,
  *  wins?: number,
  *  winRate?: number | string,
- *  avatar?: string
+ *  avatar?: string,
+ *  _origRank?: number
  * }} Player
  */
 
-// ---- Helpers ----
 const numberFmt = (n) => (n ?? 0).toLocaleString();
-const classNames = (...c) => c.filter(Boolean).join(" ");
 
-// Map API player shape -> our Player
+// Map API player shape -> our Player (preserve original rank)
 const normalizePlayer = (p, idx) => {
-  // Accept both public and admin payloads
   const score = p.totalScore ?? p.score ?? 0;
   const games = p.games ?? p.matches ?? 0;
   const wins = p.wins ?? p.victories ?? 0;
@@ -80,12 +69,15 @@ const normalizePlayer = (p, idx) => {
       ? (wins / Math.max(1, games)) * 100
       : 0;
 
+  const origRank = p.rank ?? idx + 1;
+
   return {
-    rank: p.rank ?? idx + 1,
+    rank: origRank,          // rank from API (keep)
+    _origRank: origRank,     // ORIGINAL rank to sort/display
     id: p.id ?? p.userId ?? p.username ?? idx,
     username: p.username ?? p.name ?? `Player ${idx + 1}`,
     score: Number(score ?? 0),
-    level: p.level ?? 1, // may be string in admin payload, we display as-is
+    level: p.level ?? 1,
     games: Number(games ?? 0),
     wins: Number(wins ?? 0),
     winRate,
@@ -93,57 +85,27 @@ const normalizePlayer = (p, idx) => {
   };
 };
 
-// Fake data fallback (in case API is not reachable in preview)
-const FAKE_DATA = Array.from({ length: 20 }).map((_, i) => ({
-  rank: i + 1,
-  username: `player_${i + 1}`,
-  totalScore: Math.floor(250000 - i * 2345 + (i % 7) * 321),
-  level: String(1 + ((i * 3) % 90)), // mimic string level from admin payload
-  games: 50 + ((i * 7) % 530),
-  wins: 25 + ((i * 5) % 400),
-  winRate: Math.min(100, 40 + ((i * 3) % 55)),
-  avatar: "🎮",
-})).map(normalizePlayer);
-
-const SortIcon = ({ dir }) => (
-  <span className="inline-block align-middle ml-1 opacity-60 select-none">
-    {dir === "asc" ? "▲" : dir === "desc" ? "▼" : "↕"}
-  </span>
-);
-
-const ColumnHeader = ({ label, sortKey, sort, setSort }) => {
-  const dir = sort.key === sortKey ? sort.dir : undefined;
-  return (
-    <button
-      className="text-left w-full font-semibold hover:opacity-80"
-      onClick={() => {
-        setSort((s) => ({
-          key: sortKey,
-          dir:
-            s.key === sortKey
-              ? s.dir === "asc"
-                ? "desc"
-                : s.dir === "desc"
-                ? undefined
-                : "asc"
-              : "asc",
-        }));
-      }}
-      title={`Sort by ${label}`}
-    >
-      {label}
-      <SortIcon dir={dir} />
-    </button>
-  );
-};
+// Fake data fallback
+const FAKE_DATA = Array.from({ length: 20 })
+  .map((_, i) => ({
+    rank: i + 1,
+    username: `player_${i + 1}`,
+    totalScore: Math.floor(250000 - i * 2345 + (i % 7) * 321),
+    level: String(1 + ((i * 3) % 90)),
+    games: 50 + ((i * 7) % 530),
+    wins: 25 + ((i * 5) % 400),
+    winRate: Math.min(100, 40 + ((i * 3) % 55)),
+    avatar: "🎮",
+  }))
+  .map(normalizePlayer);
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState("All-Time"); // "All-Time" | "Period"
   const [period, setPeriod] = useState("week"); // week | month
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10; // Fixed page size - always show 10 players per page
-  const [limit, setLimit] = useState(10); // API limit parameter (max 100)
+  const pageSize = 10; // fixed UI page size
+  const [limit, setLimit] = useState(10); // API page size
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [players, setPlayers] = useState(/** @type {Player[]} */ ([]));
@@ -152,33 +114,33 @@ export default function LeaderboardPage() {
     totalPlayers: 0,
     totalGames: 0,
   });
-  const [sort, setSort] = useState({ key: "rank", dir: "asc" });
+  const [sort, setSort] = useState({ key: "rank", dir: "asc" }); // key: 'rank'|'username'|'level'|'score'
 
   // Fetch leaderboard
   useEffect(() => {
     let cancelled = false;
-    
+
     async function fetchTotalCount() {
       try {
-        // Fetch with a very high limit to get total count
         const countRes = await api.get(ENDPOINTS.allTime, { params: { limit: 1000 } });
         const countData = countRes.data;
-        const countItems = Array.isArray(countData) ? countData : (countData.items ?? countData.data ?? []);
+        const countItems = Array.isArray(countData)
+          ? countData
+          : countData.items ?? countData.data ?? [];
         return countItems.length;
       } catch (e) {
         console.warn("Failed to fetch total count:", e);
         return null;
       }
     }
-    
+
     async function load() {
       setLoading(true);
       setError("");
       try {
-        // Build URL with parameters
         let url;
-        let params = { limit: limit };
-        
+        let params = { limit };
+
         if (activeTab === "All-Time") {
           url = ENDPOINTS.allTime;
         } else {
@@ -186,38 +148,28 @@ export default function LeaderboardPage() {
           params.period = period;
         }
 
-        // Fetch main data and total count in parallel
         const [res, totalCount] = await Promise.all([
           api.get(url, { params }),
-          activeTab === "All-Time" ? fetchTotalCount() : Promise.resolve(null)
+          activeTab === "All-Time" ? fetchTotalCount() : Promise.resolve(null),
         ]);
-        
-        const json = res.data;
 
-        // Accept admin payload { mode, total, items } or public arrays
-        const rows = Array.isArray(json)
-          ? json
-          : json.items ?? json.data ?? json;
+        const json = res.data;
+        const rows = Array.isArray(json) ? json : json.items ?? json.data ?? json;
         const normalized = (rows || []).map(normalizePlayer);
 
         if (!cancelled) {
           const fallback = normalized.length ? normalized : FAKE_DATA;
           setPlayers(fallback);
-          const highest = fallback.reduce(
-            (m, p) => Math.max(m, p.score ?? 0),
-            0
-          );
-          
-          // Use total count from separate API call, or fall back to API response total, or current data length
+
+          const highest = fallback.reduce((m, p) => Math.max(m, p.score ?? 0), 0);
           let totalPlayers;
           if (totalCount !== null) {
             totalPlayers = totalCount;
-          } else if (json?.total && typeof json.total === 'number') {
+          } else if (json?.total && typeof json.total === "number") {
             totalPlayers = json.total;
           } else {
-            totalPlayers = normalized.length;
+            totalPlayers = fallback.length;
           }
-          
           const totalGames = fallback.reduce((s, p) => s + (p.games || 0), 0);
           setStats({ maxScore: highest, totalPlayers, totalGames });
         }
@@ -237,54 +189,60 @@ export default function LeaderboardPage() {
       }
     }
 
-    // Simply load data without role checking
     load();
     return () => {
       cancelled = true;
     };
   }, [activeTab, period, limit]);
 
-  // ranking recompute after sort & search
+  // Filter + Sort (DO NOT mutate original rank)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let rows = players.map((p, i) => ({ ...p, rank: p.rank ?? i + 1 }));
-    if (q) rows = rows.filter((r) => `${r.username}`.toLowerCase().includes(q));
+
+    let rows = players.map((p, i) => ({
+      ...p,
+      _origRank: p._origRank ?? p.rank ?? i + 1, // ensure exists
+    }));
+
+    if (q) {
+      rows = rows.filter((r) => `${r.username}`.toLowerCase().includes(q));
+    }
 
     if (sort.dir) {
       const dir = sort.dir === "asc" ? 1 : -1;
-      
-      // Debug log to check data
-      console.log('Sorting by:', sort.key, 'direction:', sort.dir);
-      console.log('Sample data before sort:', rows.slice(0, 3));
-      
+      const key = sort.key === "rank" ? "_origRank" : sort.key; // sort by original rank when key is 'rank'
+
       rows.sort((a, b) => {
-        const ka = a[sort.key] ?? 0;
-        const kb = b[sort.key] ?? 0;
-        if (typeof ka === "string" || typeof kb === "string")
-          return String(ka).localeCompare(String(kb)) * dir;
-        return (ka - kb) * dir;
+        const ka = a[key];
+        const kb = b[key];
+
+        const numA = Number(ka);
+        const numB = Number(kb);
+        const bothNumeric = !Number.isNaN(numA) && !Number.isNaN(numB);
+
+        if (bothNumeric) return (numA - numB) * dir;
+        return String(ka ?? "").localeCompare(String(kb ?? "")) * dir;
       });
-      
-      // Always update rank after sorting to reflect new order
-      rows = rows.map((r, i) => ({ ...r, rank: i + 1 }));
-      
-      console.log('Sample data after sort:', rows.slice(0, 3));
     }
-    
-    return rows;
+
+    return rows; // NO displayRank here
   }, [players, query, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // current page rows (no displayRank)
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    const end = page * pageSize;
+    return filtered.slice(start, end);
+  }, [filtered, page]);
 
   useEffect(() => {
     setPage(1);
   }, [query, sort, activeTab, period, limit]);
 
   const resetRankings = async () => {
-    const ok = confirm(
-      "Are you sure you want to reset rankings? This action cannot be undone."
-    );
+    const ok = confirm("Are you sure you want to reset rankings? This action cannot be undone.");
     if (!ok) return;
     try {
       await api.post(ENDPOINTS.reset);
@@ -299,11 +257,7 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div className="leaderboard-header">
         <div className="leaderboard-title-section">
-          <h1>
-            {activeTab === "All-Time"
-              ? "All-Time Leaderboard"
-              : "Period Leaderboard"}
-          </h1>
+          <h1>{activeTab === "All-Time" ? "All-Time Leaderboard" : "Period Leaderboard"}</h1>
           <p>
             {activeTab === "All-Time"
               ? "Top performing players of all time"
@@ -311,15 +265,8 @@ export default function LeaderboardPage() {
           </p>
         </div>
         {/* <div className="leaderboard-actions">
-          <button
-            className="btn btn-secondary"
-            onClick={() => alert("Analytics coming soon")}
-          >
-            📊 Analytics
-          </button>
-          <button className="btn btn-primary" onClick={resetRankings}>
-            🏆 Reset Rankings
-          </button>
+          <button className="btn btn-secondary" onClick={() => alert("Analytics coming soon")}>📊 Analytics</button>
+          <button className="btn btn-primary" onClick={resetRankings}>🏆 Reset Rankings</button>
         </div> */}
       </div>
 
@@ -382,13 +329,6 @@ export default function LeaderboardPage() {
             <div className="stat-label">Total Players</div>
           </div>
         </div>
-        {/* <div className="stat-card">
-          <div className="stat-icon">🏅</div>
-          <div className="stat-content">
-            <div className="stat-value">{numberFmt(filtered.length)}</div>
-            <div className="stat-label">Ranked Players</div>
-          </div>
-        </div> */}
         <div className="stat-card">
           <div className="stat-icon">🏆</div>
           <div className="stat-content">
@@ -398,16 +338,16 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* Sort and Filter Section */}
+      {/* Sort & Filter Section */}
       <div className="sort-filter-section">
         <div className="sort-filter-left">
           <div className="filter-group">
             <label htmlFor="sortBy">Sort by:</label>
-            <select 
+            <select
               id="sortBy"
               className="sort-select"
               value={sort.key}
-              onChange={(e) => setSort({key: e.target.value, dir: 'desc'})}
+              onChange={(e) => setSort({ key: e.target.value, dir: "asc" })}
             >
               <option value="rank">Rank</option>
               <option value="username">Username</option>
@@ -415,27 +355,24 @@ export default function LeaderboardPage() {
               <option value="score">Score</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label htmlFor="sortOrder">Order:</label>
-            <select 
+            <select
               id="sortOrder"
               className="sort-select"
-              value={sort.dir || 'asc'}
-              onChange={(e) => setSort(prev => ({...prev, dir: e.target.value}))}
+              value={sort.dir || "asc"}
+              onChange={(e) => setSort((prev) => ({ ...prev, dir: e.target.value }))}
             >
               <option value="asc">Ascending</option>
               <option value="desc">Descending</option>
             </select>
           </div>
         </div>
-        
+
         <div className="sort-filter-right">
-          <button 
-            className="reset-sort-btn"
-            onClick={() => setSort({key: 'rank', dir: 'asc'})}
-          >
-         Reset Sort
+          <button className="reset-sort-btn" onClick={() => setSort({ key: "rank", dir: "asc" })}>
+            Reset Sort
           </button>
           <span className="results-count">
             Showing {pageRows.length} of {filtered.length} players
@@ -448,42 +385,10 @@ export default function LeaderboardPage() {
         <table className="leaderboard-table">
           <thead>
             <tr>
-              <th>
-                {/* <ColumnHeader
-                  label="#"
-                  sortKey="rank"
-                  sort={sort}
-                  setSort={setSort}
-                /> */}
-                Rank
-              </th>
-              <th>
-                {/* <ColumnHeader
-                  label="Player"
-                  sortKey="username"
-                  sort={sort}
-                  setSort={setSort}
-                /> */}
-                Player
-              </th>
-              <th>
-                {/* <ColumnHeader
-                  label="Level"
-                  sortKey="level"
-                  sort={sort}
-                  setSort={setSort}
-                /> */}
-                Level
-              </th>
-              <th>
-                {/* <ColumnHeader
-                  label="Score"
-                  sortKey="totalScore"
-                  sort={sort}
-                  setSort={setSort}
-                /> */}
-                Score
-              </th>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Level</th>
+              <th>Score</th>
             </tr>
           </thead>
           <tbody>
@@ -499,18 +404,14 @@ export default function LeaderboardPage() {
                 <tr key={p.id}>
                   <td>
                     <div className="rank-display">
-                      <span className="rank-number">#{p.rank}</span>
+                      <span className="rank-number">#{p._origRank ?? p.rank}</span>
                     </div>
                   </td>
                   <td>
                     <div className="player-info">
                       <div className="player-avatar">
                         {p.avatar && p.avatar !== "default-avatar.png" ? (
-                          <img
-                            src={p.avatar}
-                            alt={p.username}
-                            className="avatar-img"
-                          />
+                          <img src={p.avatar} alt={p.username} className="avatar-img" />
                         ) : (
                           <span className="avatar-placeholder">👤</span>
                         )}
@@ -540,14 +441,11 @@ export default function LeaderboardPage() {
       {/* Pagination */}
       <div className="pagination">
         <div className="pagination-info">
-          Showing {Math.min((page - 1) * pageSize + 1, filtered.length)}-{Math.min(page * pageSize, filtered.length)} of {filtered.length} players • Page {page} of {totalPages}
+          Showing {Math.min((page - 1) * pageSize + 1, filtered.length)}-
+          {Math.min(page * pageSize, filtered.length)} of {filtered.length} players • Page {page} of {totalPages}
         </div>
         <div className="pagination-buttons">
-          <button
-            className="pagination-button"
-            disabled={page <= 1}
-            onClick={() => setPage(1)}
-          >
+          <button className="pagination-button" disabled={page <= 1} onClick={() => setPage(1)}>
             ⏮
           </button>
           <button
@@ -564,22 +462,14 @@ export default function LeaderboardPage() {
           >
             Next →
           </button>
-          <button
-            className="pagination-button"
-            disabled={page >= totalPages}
-            onClick={() => setPage(totalPages)}
-          >
+          <button className="pagination-button" disabled={page >= totalPages} onClick={() => setPage(totalPages)}>
             ⏭
           </button>
         </div>
       </div>
 
       {/* Error (non-blocking) */}
-      {error && (
-        <div className="error-message">
-          Note: API error encountered (showing demo data). Details: {error}
-        </div>
-      )}
+      {error && <div className="error-message">Note: API error encountered (showing demo data). Details: {error}</div>}
     </div>
   );
 }

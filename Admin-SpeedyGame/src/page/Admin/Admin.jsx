@@ -483,16 +483,6 @@ const Admin = () => {
             Monitor your Speedy Clicker game performance and user activity
           </p>
         </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary">📊 View Reports</button>
-          <button
-            className="btn btn-primary"
-            onClick={loadStats}
-            disabled={loadingStats}
-          >
-            {loadingStats ? "Loading..." : "🔄 Refresh Data"}
-          </button>
-        </div>
       </div>
 
       {/* Stats Cards */}
