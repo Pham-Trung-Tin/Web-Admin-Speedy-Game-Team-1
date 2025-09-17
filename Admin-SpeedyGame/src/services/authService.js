@@ -195,6 +195,27 @@ export const AuthService = {
     return data?.data || data;
   },
 
+  // ---------- PASSWORD RESET ----------
+  // POST /auth/forgot-password
+  async forgotPassword(email) {
+    const data = await apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return data;
+  },
+
+  // POST /auth/reset-password
+  async resetPassword({ email, otp, newPassword }) {
+    const data = await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+    return data;
+  },
+
   // ---------- GAME ROOMS (của user hiện tại) ----------
 async getUserGameRooms({ page = 1, limit = 20 } = {}) {
   const q = new URLSearchParams({

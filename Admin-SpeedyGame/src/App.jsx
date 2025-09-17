@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./page/authentication/login";
 import SignUp from "./page/authentication/SignUp";
 import ForgotPassword from "./page/authentication/ForgotPassword";
+import ResetPassword from "./page/authentication/ResetPassword";
 import VerifyEmail from "./page/authentication/VerifyEmail";
 import Admin from "./page/Admin/Admin";
 import Profile from "./page/Admin/profileAdmin/Profile";
@@ -15,7 +16,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />       
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />       
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/profile" element={<Profile />} />
       </Routes>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { AuthService } from '../../services/authService'
 import './ForgotPassword.css'
 
 const ForgotPassword = () => {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -20,16 +22,15 @@ const ForgotPassword = () => {
         throw new Error('Please enter a valid email address')
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call forgot password API
+      await AuthService.forgotPassword(email)
       
-      // Handle forgot password logic here
-      console.log('Password reset request for:', email)
-      
-      setIsSubmitted(true)
+      // Navigate directly to reset password page with email
+      navigate('/reset-password', { state: { email } })
       
     } catch (error) {
-      setError(error.message)
+      console.error('Forgot password error:', error)
+      setError(error.message || 'Failed to send reset email. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -39,6 +40,13 @@ const ForgotPassword = () => {
     setIsSubmitted(false)
     setEmail('')
   }
+
+  const handleGoToReset = () => {
+    navigate('/reset-password', { state: { email } })
+  }
+
+  // This component now primarily navigates to reset page
+  // Success screen is kept as fallback in case navigation fails
 
   if (isSubmitted) {
     return (
@@ -65,10 +73,19 @@ const ForgotPassword = () => {
               <p className="instruction">
                 Click the link in the email to reset your password. 
                 If you don't see the email, check your spam folder.
+                Or you can directly enter the OTP code you received.
               </p>
             </div>
 
             <div className="action-buttons">
+              <button 
+                type="button" 
+                className="reset-button"
+                onClick={handleGoToReset}
+              >
+                Enter OTP Code
+              </button>
+              
               <button 
                 type="button" 
                 className="resend-button"
