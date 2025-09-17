@@ -101,9 +101,15 @@ const Profile = () => {
         id: freshProfile._id || freshProfile.id || profileData.id,
         username: freshProfile.username || profileData.username,
         email: freshProfile.email || profileData.email,
-        fullName: freshProfile.fullName || freshProfile.username || profileData.fullName,
+        fullName:
+          freshProfile.fullName ||
+          freshProfile.username ||
+          profileData.fullName,
         phone: freshProfile.phone || profileData.phone,
-        role: (Array.isArray(freshProfile.roles) && freshProfile.roles[0]) || freshProfile.role || profileData.role,
+        role:
+          (Array.isArray(freshProfile.roles) && freshProfile.roles[0]) ||
+          freshProfile.role ||
+          profileData.role,
         department: freshProfile.department || profileData.department,
         joinDate: freshProfile.createdAt || profileData.joinDate,
         lastLogin: freshProfile.lastLogin || profileData.lastLogin,
@@ -235,15 +241,15 @@ const Profile = () => {
       <div className="profile-content">
         <div className="avatar-section">
           <div className="avatar-container">
-            {(editData?.avatar || profileData?.avatar) ? (
+            {editData?.avatar || profileData?.avatar ? (
               <img
                 src={editData?.avatar || profileData?.avatar}
                 alt="Avatar"
                 className="profile-avatar-large"
                 onError={(e) => {
                   console.error("Avatar load error:", e.target.src);
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
                 }}
               />
             ) : null}
@@ -253,7 +259,10 @@ const Profile = () => {
               </div>
             )}
             {/* Fallback placeholder (hidden by default, shown on image error) */}
-            <div className="profile-avatar-large placeholder" style={{ display: 'none' }}>
+            <div
+              className="profile-avatar-large placeholder"
+              style={{ display: "none" }}
+            >
               <span>{editData?.fullName?.charAt(0) || "A"}</span>
             </div>
             {isEditing && (
@@ -397,30 +406,17 @@ const Profile = () => {
       {/* Header */}
       <header className="admin-header">
         <div className="header-left">
-          <div className="logo">
+          <div
+            className="logo"
+            onClick={() => navigate("/admin")}
+            style={{ cursor: "pointer" }}
+          >
             <span className="logo-icon">⚡</span>
             <span className="logo-text">Speedy Clicker</span>
           </div>
         </div>
 
         <div className="header-right">
-          <button className="btn btn-secondary" onClick={handleBackToAdmin}>
-            ← Back to Admin
-          </button>
-
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="search-input"
-            />
-            <button className="search-btn">🔍</button>
-          </div>
-
-          <div className="header-icons">
-            <button className="icon-btn">🔔</button>
-          </div>
-
           <div
             className="admin-profile"
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -460,7 +456,7 @@ const Profile = () => {
               <div className="profile-title-section">
                 <h1 className="profile-title">Admin Profile</h1>
                 <p className="profile-subtitle">
-                 Manage personal information and account settings
+                  Manage personal information and account settings
                 </p>
               </div>
             </div>
@@ -490,7 +486,6 @@ const Profile = () => {
               >
                 👥 Room Users
               </button>
-              
             </div>
 
             <div className="profile-content-wrapper">
