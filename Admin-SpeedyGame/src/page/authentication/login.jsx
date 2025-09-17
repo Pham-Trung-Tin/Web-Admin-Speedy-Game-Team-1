@@ -10,6 +10,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({}); // Field-specific errors
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
@@ -37,7 +38,25 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setErrors({});
     setSuccess("");
+
+    // Basic client-side validation
+    const newErrors = {};
+    if (!username.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(username)) {
+      newErrors.email = "Email format is invalid";
+    }
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await axios.post(`${BASE_URL}/auth/login`, {
@@ -66,9 +85,7 @@ const Login = () => {
           // chuyển NGAY, không setTimeout
           navigate("/admin", { replace: true });
         } else {
-          alert("Bạn không có quyền truy cập Admin Leaderboard");
-          // nếu trang login đang ở '/', đừng navigate('/') nữa vì trông như không chuyển
-          // navigate('/'); // <- bỏ nếu login page đã là '/'
+          setError("You don't have permission to access Admin Dashboard");
         }
 
         
@@ -77,7 +94,26 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert(error.response?.data?.message || "Đăng nhập thất bại");
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        setErrors({ 
+          password: "Invalid email or password"
+        });
+      } else if (error.response?.status === 404) {
+        setErrors({ 
+          email: "Email not found"
+        });
+      } else if (error.response?.status === 400) {
+        const backendErrors = error.response?.data?.errors;
+        if (backendErrors) {
+          setErrors(backendErrors);
+        } else {
+          setError(error.response?.data?.message || "Login failed. Please check your credentials.");
+        }
+      } else {
+        setError(error.response?.data?.message || "Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +138,7 @@ const Login = () => {
           </div>
 
           <form className="login-form" onSubmit={handleLogin}>
-            {/* Error Message */}
+            {/* General Error Message */}
             {error && (
               <div className="error-message">
                 <span className="error-icon">⚠️</span>
@@ -129,9 +165,13 @@ const Login = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
+                  className={errors.email ? "error" : ""}
                 />
                 <span className="input-icon">👤</span>
               </div>
+              {errors.email && (
+                <p className="field-error">{errors.email}</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -145,6 +185,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className={errors.password ? "error" : ""}
                 />
                 <button
                   type="button"
@@ -155,6 +196,9 @@ const Login = () => {
                   {showPassword ? "🙈" : "👁️"}
                 </button>
               </div>
+              {errors.password && (
+                <p className="field-error">{errors.password}</p>
+              )}
             </div>
 
             <div className="forgot-password">

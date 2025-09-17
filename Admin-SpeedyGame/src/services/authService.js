@@ -45,6 +45,67 @@ export const AuthService = {
     return data;
   },
 
+  // Validate sign up data with backend
+  async validateSignUpData(formData) {
+    try {
+      const data = await apiFetch('/auth/validate-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      return { isValid: true, errors: {} };
+    } catch (error) {
+      // Nếu endpoint không tồn tại hoặc unauthorized, skip validation
+      if (error.status === 401 || error.status === 404) {
+        console.log('Validation endpoint not available, skipping backend validation');
+        return { isValid: true, errors: {} };
+      }
+      
+      // Backend trả về validation errors
+      if (error.status === 400 && error.data?.errors) {
+        return { isValid: false, errors: error.data.errors };
+      }
+      
+      // Các lỗi khác, skip validation
+      console.warn('Validation API error:', error.message);
+      return { isValid: true, errors: {} };
+    }
+  },
+
+  // Register new user
+  async register(userData) {
+    try {
+      const data = await apiFetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      return data;
+    } catch (error) {
+      // Xử lý lỗi duplicate cụ thể
+      if (error.status === 409) {
+        // Conflict - username or email already exists
+        const errorMessage = error.data?.message || error.message || '';
+        
+        if (errorMessage.toLowerCase().includes('email')) {
+          throw { status: 409, field: 'email', message: 'Email already exists' };
+        } else if (errorMessage.toLowerCase().includes('username')) {
+          throw { status: 409, field: 'username', message: 'Username already exists' };
+        } else {
+          throw { status: 409, field: 'general', message: 'Email or Username already exists' };
+        }
+      }
+      
+      // Xử lý lỗi validation từ backend
+      if (error.status === 400 && error.data?.errors) {
+        throw { status: 400, errors: error.data.errors };
+      }
+      
+      // Các lỗi khác
+      throw error;
+    }
+  },
+
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_profile');

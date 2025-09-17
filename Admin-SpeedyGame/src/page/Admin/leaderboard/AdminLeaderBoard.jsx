@@ -2,12 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./AdminLeaderBoard.css";
 
-// =====================================
-// Leaderboard Page (Rank is ORIGINAL)
-// - Rank column always shows original rank (_origRank)
-// - Sorting by "Rank" uses _origRank
-// - Sorting by other columns does NOT change rank values
-// =====================================
+
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const ENDPOINTS = {

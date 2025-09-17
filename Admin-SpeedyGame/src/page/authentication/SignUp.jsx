@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthService } from "../../services/authService";
 import "./SignUp.css";
 
 const SignUp = () => {
@@ -11,18 +12,71 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isValidating, setIsValidating] = useState(false);
   const navigate = useNavigate();
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  // Helper function to parse duplicate errors
+  const parseDuplicateError = (errorMessage) => {
+    const message = errorMessage.toLowerCase();
+    if (message.includes('email') && message.includes('username')) {
+      return { general: "Email and Username already exist" };
+    } else if (message.includes('email')) {
+      return { email: "Email already exists" };
+    } else if (message.includes('username')) {
+      return { username: "Username already exists" };
+    } else {
+      return { general: "Email or Username already exists" };
+    }
+  };
+  
+  // Debounced validation function
+  const validateField = useCallback(async (field, value) => {
+    if (!value || value.trim() === '') {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const validationData = { [field]: value };
+      const result = await AuthService.validateSignUpData(validationData);
+      
+      if (!result.isValid && result.errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: result.errors[field] }));
+      } else {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
+    } catch (error) {
+      console.error('Validation error:', error);
+      // Keep client-side validation as fallback
+      if (field === 'email' && !/\S+@\S+\.\S+/.test(value)) {
+        setErrors(prev => ({ ...prev, email: 'Email format is invalid' }));
+      } else if (field === 'password' && value.length < 6) {
+        setErrors(prev => ({ ...prev, password: 'Password must be at least 6 characters' }));
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  }, []);
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
   };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
+    // Client-side validation first (fallback)
     const newErrors = {};
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -44,40 +98,62 @@ const SignUp = () => {
     }
 
     setIsLoading(true);
+    setErrors({});
 
-      try {
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      console.log("Request URL:", `${API_BASE}/auth/register`);
-      console.log("Request Body:", formData);
-      console.log("Response status:", response.status);
-
-      if (response.status === 409) {
-        setErrors({ general: "Email or Username already exists" });
+    try {
+      // Validate with backend first (nếu available)
+      const validationResult = await AuthService.validateSignUpData(formData);
+      
+      if (!validationResult.isValid) {
+        setErrors(validationResult.errors);
         return;
       }
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Backend error:", errorText);
-        throw new Error("Failed to register");
-      }
 
-      const data = await response.json();
-      console.log("API response:", data);
+      // If validation passes, proceed with registration
+      const data = await AuthService.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      });
 
+      console.log("Registration successful:", data);
       alert("Account created successfully! Please check your email for OTP.");
       navigate("/verify-email", { state: { email: formData.email } });
+
     } catch (error) {
       console.error("Sign up failed:", error);
-      setErrors({ general: "Registration failed. Please try again." });
+      
+      // Handle specific duplicate field errors
+      if (error.status === 409) {
+        if (error.field && error.message) {
+          // Từ authService đã parse sẵn
+          if (error.field === 'email') {
+            setErrors({ email: error.message });
+          } else if (error.field === 'username') {
+            setErrors({ username: error.message });
+          } else {
+            setErrors({ general: error.message });
+          }
+        } else {
+          // Parse từ raw error message
+          const errorMessage = error.data?.message || error.message || "Conflict error";
+          const parsedErrors = parseDuplicateError(errorMessage);
+          setErrors(parsedErrors);
+        }
+      } 
+      // Handle validation errors from backend
+      else if (error.status === 400 && error.errors) {
+        setErrors(error.errors);
+      }
+      // Handle other backend errors
+      else if (error.status >= 400 && error.status < 500) {
+        const message = error.data?.message || error.message || "Registration failed. Please try again.";
+        setErrors({ general: message });
+      }
+      // Handle network/server errors
+      else {
+        setErrors({ general: "Registration failed. Please check your connection and try again." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -115,8 +191,13 @@ const SignUp = () => {
                   placeholder="Choose a username"
                   value={formData.username}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  disabled={isLoading}
                 />
                 <span className="input-icon">🆔</span>
+                {isValidating && formData.username && (
+                  <span className="validation-spinner">⏳</span>
+                )}
               </div>
               {errors.username && (
                 <p className="field-error">{errors.username}</p>
@@ -132,8 +213,13 @@ const SignUp = () => {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  disabled={isLoading}
                 />
                 <span className="input-icon">📧</span>
+                {isValidating && formData.email && (
+                  <span className="validation-spinner">⏳</span>
+                )}
               </div>
               {errors.email && <p className="field-error">{errors.email}</p>}
             </div>
@@ -148,6 +234,8 @@ const SignUp = () => {
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -157,6 +245,9 @@ const SignUp = () => {
                 >
                   {showPassword ? "🙈" : "👁️"}
                 </button>
+                {isValidating && formData.password && (
+                  <span className="validation-spinner">⏳</span>
+                )}
               </div>
               {errors.password && (
                 <span className="field-error">{errors.password}</span>

@@ -326,6 +326,24 @@ const Admin = () => {
 
   // Nếu không có quyền, hiển thị thông báo
   if (!hasAccess) {
+    const handleBackToLogin = () => {
+      try {
+        console.log('Navigating to login page...');
+        // Clear any stored auth data
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_profile');
+        localStorage.removeItem('authData');
+        
+        // Navigate to login
+        navigate('/login', { replace: true });
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Fallback: use window.location
+        window.location.href = '/login';
+      }
+    };
+
     return (
       <div className="access-denied">
         <div className="access-denied-icon">🔒</div>
@@ -334,7 +352,11 @@ const Admin = () => {
         <p>
           Required roles: <strong>ADMIN</strong> or <strong>staff</strong>
         </p>
-        <button className="btn btn-primary" onClick={() => navigate("/login")}>
+        <button 
+          className="btn btn-primary back-to-login-btn" 
+          onClick={handleBackToLogin}
+          type="button"
+        >
           Back to Login
         </button>
       </div>
