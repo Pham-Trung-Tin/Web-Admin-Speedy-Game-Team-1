@@ -15,6 +15,7 @@ import ListSessions from "./ListSessions";
 import UserDetail from "./user/UserDetail";
 import EditUser from "./user/EditUser";
 import BanUser from "./user/BanUser";
+import LogoutModal from "../../components/LogoutModal";
 
 // ---- Config: quyền hạn cho admin ----
 const ALLOWED_ROLES = ["ADMIN", "staff"];
@@ -297,6 +298,9 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutType, setLogoutType] = useState(null); // 'current' or 'all'
   const [dashboardStats, setDashboardStats] = useState([
     {
       icon: "👥",
@@ -462,14 +466,53 @@ const Admin = () => {
   }
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      // Xóa dữ liệu xác thực
-      authService.logout();
-      localStorage.removeItem("authData");
+    setShowProfileDropdown(false);
+    setShowLogoutModal(true);
+  };
 
+  const handleLogoutCurrent = async () => {
+    setIsLoggingOut(true);
+    setLogoutType('current');
+    try {
+      // Gọi API logout từ thiết bị hiện tại
+      await authService.logout();
+      
       // Redirect về trang login
-      navigate("/login");
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Dù có lỗi vẫn redirect để đảm bảo user được logout
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutType(null);
+      setShowLogoutModal(false);
     }
+  };
+
+  const handleLogoutAll = async () => {
+    setIsLoggingOut(true);
+    setLogoutType('all');
+    try {
+      // Gọi API logout từ tất cả thiết bị
+      await authService.logoutAll();
+      
+      // Redirect về trang login
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout all error:", error);
+      // Dù có lỗi vẫn redirect để đảm bảo user được logout
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutType(null);
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+    setLogoutType(null);
   };
 
   // Navigation menu structure based on API endpoints
@@ -909,6 +952,16 @@ const Admin = () => {
             ].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
+
+      {/* Logout Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onCancel={handleLogoutCancel}
+        onLogoutCurrent={handleLogoutCurrent}
+        onLogoutAll={handleLogoutAll}
+        isLoading={isLoggingOut}
+        loadingType={logoutType}
+      />
     </div>
   );
 };

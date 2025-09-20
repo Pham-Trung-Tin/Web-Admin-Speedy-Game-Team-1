@@ -106,9 +106,48 @@ export const AuthService = {
     }
   },
 
-  logout() {
+  async logout() {
+    try {
+      // Lấy refresh token từ localStorage hoặc cookie
+      const refreshToken = localStorage.getItem('refresh_token') || '';
+      
+      // Gọi API logout nếu có refresh token
+      if (refreshToken) {
+        await apiFetch('/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+      }
+    } catch (error) {
+      console.warn('Logout API error:', error.message);
+      // Tiếp tục xóa token dù API thất bại
+    }
+    
+    // Xóa tất cả dữ liệu authentication
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_profile');
+    localStorage.removeItem('authData');
+  },
+
+  async logoutAll() {
+    try {
+      // Gọi API logout-all để đăng xuất khỏi tất cả thiết bị
+      await apiFetch('/auth/logout-all', {
+        method: 'POST',
+        headers: jsonHeaders(),
+      });
+    } catch (error) {
+      console.warn('Logout all API error:', error.message);
+      // Tiếp tục xóa token dù API thất bại
+    }
+    
+    // Xóa tất cả dữ liệu authentication
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_profile');
+    localStorage.removeItem('authData');
   },
 
   isAuthenticated() {
@@ -158,11 +197,20 @@ export const AuthService = {
   },
 
   async changePassword({ currentPassword, newPassword }) {
-    return apiFetch('/user/change-password', {
+    return apiFetch('/auth/change-password', {
       method: 'POST',
       headers: jsonHeaders(),
       body: JSON.stringify({ currentPassword, newPassword }),
     });
+  },
+
+  async deleteAccount({ password }) {
+    const data = await apiFetch('/auth/delete', {
+      method: 'DELETE',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ password }),
+    });
+    return data;
   },
 
   // Optional — if backend supports multipart avatar upload

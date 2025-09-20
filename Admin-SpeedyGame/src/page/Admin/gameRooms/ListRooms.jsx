@@ -226,25 +226,29 @@ const ListRooms = () => {
                     <td>{room.shapeCount ?? "N/A"}</td>
                     <td>{formatDate(room.createdAt)}</td>
                     <td>
-                      <button
-                        className="btn-view"
-                        onClick={() => {
-                          localStorage.setItem("selectedRoomId", room._id);
-                          window.dispatchEvent(
-                            new CustomEvent("changeAdminTab", { detail: "RoomDetails" })
-                          );
-                        }}
-                        disabled={deletingId === room._id}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDelete(room._id)}
-                        disabled={deletingId === room._id}
-                      >
-                        {deletingId === room._id ? "Deleting..." : "Delete"}
-                      </button>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-view"
+                          title="View details"
+                          onClick={() => {
+                            localStorage.setItem("selectedRoomId", room._id);
+                            window.dispatchEvent(
+                              new CustomEvent("changeAdminTab", { detail: "RoomDetails" })
+                            );
+                          }}
+                          disabled={deletingId === room._id}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="btn-delete"
+                          title="Delete room"
+                          onClick={() => handleDelete(room._id)}
+                          disabled={deletingId === room._id}
+                        >
+                          {deletingId === room._id ? "..." : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

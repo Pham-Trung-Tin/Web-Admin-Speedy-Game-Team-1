@@ -13,11 +13,28 @@ const EditUser = ({ userId }) => {
     setError(null);
     const token = localStorage.getItem("access_token");
     try {
+      // Use soft delete by updating user status to 'deleted'
       const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: "deleted" }),
       });
-      if (!res.ok) throw new Error('Xóa user thất bại');
+      if (!res.ok) {
+        let msg = "Xóa user thất bại";
+        try {
+          const errJson = await res.json();
+          msg = errJson.message || msg;
+          console.error("API error:", errJson);
+        } catch {}
+        throw new Error(msg);
+      }
+      // Update the local form state to reflect the change
+      setForm(f => ({ ...f, status: "deleted" }));
+      setUser(u => ({ ...u, status: "deleted" }));
+      alert('User đã được xóa thành công!');
       window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "Users" }));
     } catch (err) {
       setError(err.message || "Xóa user thất bại");
@@ -215,6 +232,7 @@ const EditUser = ({ userId }) => {
               {deleting ? "Đang xóa..." : "Xóa user"}
             </button>
             {success && <span style={{color:'green',marginLeft:16}}>✔️ Đã lưu!</span>}
+            {error && <div style={{color:'red',marginTop:16,padding:12,border:'1px solid #f44336',borderRadius:6,background:'#fff5f5'}}>{error}</div>}
             {/* Chỉ giữ báo lỗi email ngay dưới ô nhập email, không hiện dưới nút nữa */}
           </div>
         </form>

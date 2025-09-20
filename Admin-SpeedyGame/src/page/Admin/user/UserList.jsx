@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserList } from '../../../services/userService';
+import { getUserList, deleteUser } from '../../../services/userService';
 import './UserList.css';
 
 const UserList = () => {
@@ -47,10 +47,24 @@ const UserList = () => {
     window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "EditUser" }));
   };
 
-  const handleDeleteUser = (user) => {
+  const handleDeleteUser = async (user) => {
     if(window.confirm(`Bạn có chắc muốn xóa user: ${user.username || user.name}?`)) {
-      alert('Đã xóa user (demo)');
-      // Thực tế: gọi API xóa và cập nhật lại danh sách
+      try {
+        await deleteUser(user._id || user.id);
+        alert('Đã xóa user thành công');
+        // Refresh the user list
+        setLoadingUsers(true);
+        setUserError(null);
+        getUserList()
+          .then(data => {
+            setUsersData(Array.isArray(data) ? data : (data?.items || []));
+            setCurrentPage(1);
+          })
+          .catch(err => setUserError('Lỗi tải danh sách user'))
+          .finally(() => setLoadingUsers(false));
+      } catch (error) {
+        alert('Lỗi khi xóa user: ' + (error.message || 'Không xác định'));
+      }
     }
   };
 
@@ -89,14 +103,13 @@ const UserList = () => {
 
   return (
     <div className="user-list-wrapper">
-      <div className="user-list-header" style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
+      <div className="user-list-header">
         <input
           type="text"
           className="filter-input"
           placeholder="Tìm kiếm theo tên, email..."
           value={searchText}
           onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
-          style={{padding:'8px',borderRadius:4,border:'1px solid #ccc',minWidth:220}}
         />
         <select
           className="filter-select"
@@ -123,18 +136,20 @@ const UserList = () => {
       </div>
 
       {loadingUsers ? (
-        <p style={{ padding: 24, textAlign: 'center' }}>Đang tải danh sách người dùng...</p>
+        <div className="loading-state">
+          <p>Đang tải danh sách người dùng...</p>
+        </div>
       ) : userError ? (
-        <div style={{ color: 'red', padding: 24 }}>{userError}</div>
+        <div className="error-message">{userError}</div>
       ) : filtered.length > 0 ? (
         <>
-          <div style={{overflowX:'auto', width:'100%', maxWidth:'100vw', borderRadius:8, background:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', margin:'0 auto'}}>
-            <table className="data-table" style={{minWidth:'1100px', width:'100%', borderCollapse:'collapse', borderRadius:8}}>
+          <div className="data-table-wrapper">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>User</th>
                   <th>Email</th>
-                  <th>Total Score</th>
+                  <th>Score</th>
                   <th>Role</th>
                   <th>Level</th>
                   <th>Avatar</th>
@@ -150,25 +165,73 @@ const UserList = () => {
                 {paged.map(user => (
                   <tr key={user._id || user.id}>
                     <td title={(user.username || user.name || user.email) + ' | ID: ' + (user._id || user.id)}>
-                      <div style={{display:'flex',flexDirection:'column'}}>
-                        <span style={{fontWeight:'bold'}}>{user.username}</span>
-                        <span style={{fontSize:'12px',color:'#888'}}>ID: {user._id || user.id}</span>
+                      <div className="user-info">
+                        <span className="user-username">{user.username}</span>
+                        <span className="user-id">ID: {user._id || user.id}</span>
                       </div>
                     </td>
                     <td title={user.email}>{user.email}</td>
-                    <td title={String(user.totalScore)}>{user.totalScore}</td>
-                    <td title={Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}>{Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}</td>
-                    <td title={user.level}>{user.level}</td>
-                    <td title={user.avatar}>{user.avatar ? <img src={user.avatar} alt="avatar" style={{width:32,height:32,borderRadius:'50%'}} /> : 'N/A'}</td>
-                    <td title={user.bio}>{user.bio}</td>
-                    <td title={user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}>{user.isEmailVerified ? '✔️' : '❌'}</td>
-                    <td title={user.status}>{user.status && <span className={`status-badge ${user.status || ''}`}>{user.status}</span>}</td>
-                    <td title={String(user.loginFailCount)}>{user.loginFailCount}</td>
-                    <td title={user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}>{user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}</td>
-                    <td style={{textAlign:'center', verticalAlign:'middle'}}>
-                      <div className="action-buttons" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'10px',height:'100%'}}>
-                        <button className="btn-action" title="Xem" onClick={() => handleViewUser(user)}>👁️</button>
-                        <button className="btn-action" title="Sửa" onClick={() => handleEditUser(user)}>✏️</button>
+                    <td title={String(user.totalScore)}>
+                      <span className="user-score">{user.totalScore}</span>
+                    </td>
+                    <td title={Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}>
+                      <div className="user-role-badges">
+                        {Array.isArray(user.roles) ? 
+                          user.roles.map((role, idx) => (
+                            <span key={idx} className={`user-role-badge ${role.toLowerCase()}`}>
+                              {role}
+                            </span>
+                          )) :
+                          <span className={`user-role-badge ${(user.roles || '').toLowerCase()}`}>
+                            {user.roles}
+                          </span>
+                        }
+                      </div>
+                    </td>
+                    <td title={user.level}>
+                      <span className="user-level-badge">{user.level}</span>
+                    </td>
+                    <td title={user.avatar}>
+                      {user.avatar ? (
+                        <div className="user-avatar-cell">
+                          <img src={user.avatar} alt="avatar" className="user-avatar-image" />
+                        </div>
+                      ) : (
+                        <span>👤</span>
+                      )}
+                    </td>
+                    <td title={user.bio}>{user.bio || '-'}</td>
+                    <td title={user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}>
+                      <span className={user.isEmailVerified ? 'user-status-verified' : 'user-status-unverified'}>
+                        {user.isEmailVerified ? '✔️' : '❌'}
+                      </span>
+                    </td>
+                    <td title={user.status}>
+                      {user.status && (
+                        <span className={`status-badge ${(user.status || '').toLowerCase()}`}>
+                          {user.status}
+                        </span>
+                      )}
+                    </td>
+                    <td title={String(user.loginFailCount)}>{user.loginFailCount || 0}</td>
+                    <td title={user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}>
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn-action" title="Xem" onClick={() => handleViewUser(user)}>
+                          View
+                        </button>
+                        <button className="btn-action" title="Sửa" onClick={() => handleEditUser(user)}>
+                          Edit
+                        </button>
+                        {/* <button
+                          className="btn-action danger"
+                          title="Xóa user"
+                          onClick={() => handleDeleteUser(user)}
+                        >
+                          🗑️
+                        </button> */}
                         <button
                           className="btn-action danger"
                           title="Chặn/Gỡ chặn user"
@@ -177,7 +240,7 @@ const UserList = () => {
                             window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "BanUser" }));
                           }}
                         >
-                          🚫
+                          Ban
                         </button>
                       </div>
                     </td>
@@ -186,12 +249,12 @@ const UserList = () => {
               </tbody>
             </table>
           </div>
-          <div className="pagination" style={{marginTop:16,display:'flex',alignItems:'center',justifyContent:'center',gap:16}}>
+          <div className="pagination">
             <button
               onClick={() => setCurrentPage(p => Math.max(p-1, 1))}
               disabled={currentPage === 1}
-              style={{padding:'6px 16px'}}>
-              Trước
+            >
+              ← Trước
             </button>
             <span>
               Trang {currentPage} / {totalPages}
@@ -199,14 +262,16 @@ const UserList = () => {
             <button
               onClick={() => setCurrentPage(p => Math.min(p+1, totalPages))}
               disabled={currentPage === totalPages}
-              style={{padding:'6px 16px'}}>
-              Tiếp
+            >
+              Tiếp →
             </button>
           </div>
         </>
       ) : (
-        <div>
-          <p>Không có người dùng nào.</p>
+        <div className="empty-state">
+          <div className="empty-state-icon">👥</div>
+          <h3>Không có người dùng nào</h3>
+          <p>Hiện tại chưa có người dùng nào trong hệ thống hoặc không khớp với bộ lọc.</p>
           <button className="btn btn-primary">Thêm người dùng mới</button>
         </div>
       )}

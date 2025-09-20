@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { AuthService } from "../../../services/authService.js";
 import GameHistory from "../gameHistory/GameHistory";
 import GameRoomUser from "../gameRoomUser/GameRoomUser";
+import ChangePassword from "./ChangePassword.jsx";
+import DeleteAccount from "./DeleteAccount.jsx";
+import LogoutModal from "../../../components/LogoutModal";
 import "./Profile.css";
 import "../Admin.css";
 
@@ -10,11 +13,16 @@ const Profile = () => {
   const [activeSection, setActiveSection] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutType, setLogoutType] = useState(null); // 'current' or 'all'
   const [avatarFile, setAvatarFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [profileData, setProfileData] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -27,8 +35,53 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    AuthService.logout();
-    navigate("/login");
+    setShowProfileDropdown(false);
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutCurrent = async () => {
+    setIsLoggingOut(true);
+    setLogoutType('current');
+    try {
+      // Gọi API logout từ thiết bị hiện tại
+      await AuthService.logout();
+      
+      // Redirect về trang login
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Dù có lỗi vẫn redirect để đảm bảo user được logout
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutType(null);
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleLogoutAll = async () => {
+    setIsLoggingOut(true);
+    setLogoutType('all');
+    try {
+      // Gọi API logout từ tất cả thiết bị
+      await AuthService.logoutAll();
+      
+      // Redirect về trang login
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout all error:", error);
+      // Dù có lỗi vẫn redirect để đảm bảo user được logout
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setLogoutType(null);
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+    setLogoutType(null);
   };
 
   const handleBackToAdmin = () => {
@@ -143,6 +196,14 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  const handlePasswordChangeSuccess = (message) => {
+    setSuccessMessage(message);
+    // Auto hide success message after 5 seconds
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 5000);
+  };
+
   // const handleChangePassword = async () => {
   //   if (passwordData.newPassword !== passwordData.confirmPassword) {
   //     alert("Mật khẩu xác nhận không khớp!");
@@ -229,13 +290,33 @@ const Profile = () => {
     <div className="profile-section">
       <div className="section-header">
         <h3>Personal Information</h3>
-        <button
-          className={`btn ${isEditing ? "btn-secondary" : "btn-primary"}`}
-          onClick={isEditing ? handleCancelEdit : () => setIsEditing(true)}
-          disabled={saving}
-        >
-          {isEditing ? "❌ Cancel" : "✏️ Edit"}
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowChangePassword(true)}
+          >
+           Change Password
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={() => setShowDeleteAccount(true)}
+            style={{ 
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: '1px solid #dc2626'
+            }}
+          >
+           Delete Account
+          </button>
+          
+          <button
+            className={`btn ${isEditing ? "btn-secondary" : "btn-primary"}`}
+            onClick={isEditing ? handleCancelEdit : () => setIsEditing(true)}
+            disabled={saving}
+          >
+            {isEditing ? "❌ Cancel" : "✏️ Edit"}
+          </button>
+        </div>
       </div>
 
       <div className="profile-content">
@@ -489,6 +570,19 @@ const Profile = () => {
             </div>
 
             <div className="profile-content-wrapper">
+              {successMessage && (
+                <div className="success-alert">
+                  <span className="success-icon">✅</span>
+                  {successMessage}
+                  <button 
+                    className="success-close"
+                    onClick={() => setSuccessMessage("")}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              
               {activeSection === "personal" && renderPersonalInfo()}
               {activeSection === "settings" && renderGameHistory()}
               {activeSection === "users" && renderGameRoom()}
@@ -497,6 +591,35 @@ const Profile = () => {
           </div>
         </main>
       </div>
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <ChangePassword
+          onClose={() => setShowChangePassword(false)}
+          onSuccess={handlePasswordChangeSuccess}
+        />
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccount && (
+        <DeleteAccount
+          onClose={() => setShowDeleteAccount(false)}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setShowDeleteAccount(false);
+          }}
+        />
+      )}
+
+      {/* Logout Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onCancel={handleLogoutCancel}
+        onLogoutCurrent={handleLogoutCurrent}
+        onLogoutAll={handleLogoutAll}
+        isLoading={isLoggingOut}
+        loadingType={logoutType}
+      />
     </div>
   );
 };

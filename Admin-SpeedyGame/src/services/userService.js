@@ -1,7 +1,9 @@
 export async function deleteUser(id) {
+  // Use soft delete by updating status to 'deleted'
   return apiFetch(`/admin/users/${id}`, {
-    method: 'DELETE',
+    method: 'PATCH',
     headers: headersJson(),
+    body: JSON.stringify({ status: 'deleted' }),
   });
 }
 // services/UserService.js
