@@ -66,11 +66,22 @@ const UserList = () => {
   }
   if (levelFilter) {
     filtered = filtered.filter(u => {
-      if (levelFilter === 'Nhập Môn') return u.level >= 1 && u.level <= 10;
-      if (levelFilter === 'Trung cấp') return u.level >= 11 && u.level <= 30;
-      if (levelFilter === 'Nâng cao') return u.level >= 31 && u.level <= 50;
-      if (levelFilter === 'Chuyên gia') return u.level > 50;
-      return true;
+      // Nếu level là số
+      const num = Number(u.level);
+      if (!isNaN(num)) {
+        if (levelFilter === 'Nhập Môn') return num >= 1 && num <= 10;
+        if (levelFilter === 'Trung cấp') return num >= 11 && num <= 30;
+        if (levelFilter === 'Nâng cao') return num >= 31 && num <= 50;
+        if (levelFilter === 'Chuyên gia') return num > 50;
+      }
+      // Nếu level là chuỗi
+      if (typeof u.level === 'string') {
+        if (levelFilter === 'Nhập Môn') return u.level.toLowerCase().includes('nhập môn');
+        if (levelFilter === 'Trung cấp') return u.level.toLowerCase().includes('trung cấp');
+        if (levelFilter === 'Nâng cao') return u.level.toLowerCase().includes('nâng cao');
+        if (levelFilter === 'Chuyên gia') return u.level.toLowerCase().includes('chuyên gia');
+      }
+      return false;
     });
   }
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -109,7 +120,6 @@ const UserList = () => {
           <option value="Nâng cao">Nâng cao (31-50)</option>
           <option value="Chuyên gia">Chuyên gia (50+)</option>
         </select>
-        <button className="btn btn-primary">+ Thêm người dùng</button>
       </div>
 
       {loadingUsers ? (
