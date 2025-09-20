@@ -139,12 +139,11 @@ export default function LeaderboardPage() {
 
         if (activeTab === "All-Time") {
           url = ENDPOINTS.allTime;
-          // Include level filter for All-Time as well (only if a specific level is selected)
-          if (level && level.trim() !== "") params.level = level;
+          // All-Time tab doesn't support level filtering
         } else {
           url = ENDPOINTS.period;
           params.period = period;             // week | month
-          if (level && level.trim() !== "") params.level = level;    // optional filter (only if specific level selected)
+          if (level && level.trim() !== "") params.level = level;    // level filter only for Period tab
         }
 
         const [res, totalCount] = await Promise.all([
@@ -256,6 +255,13 @@ export default function LeaderboardPage() {
     setPage(1);
   }, [query, sort, activeTab, period, level, limit]);
 
+  // Reset level filter when switching to All-Time tab
+  useEffect(() => {
+    if (activeTab === "All-Time") {
+      setLevel("");
+    }
+  }, [activeTab]);
+
   const resetRankings = async () => {
     const ok = confirm("Are you sure you want to reset rankings? This action cannot be undone.");
     if (!ok) return;
@@ -275,8 +281,8 @@ export default function LeaderboardPage() {
           <h1>{activeTab === "All-Time" ? "All-Time Leaderboard" : "Period Leaderboard"}</h1>
           <p>
             {activeTab === "All-Time"
-              ? `Top performing players of all time${level ? ` • ${level.replace('LEVEL_', 'Level ')}` : ""}`
-              : `Top players by ${period}${level ? ` • ${level.replace('LEVEL_', 'Level ')}` : ""}`}
+              ? "Top performing players of all time"
+              : `Top players by ${period}${level && level.trim() !== "" ? ` • ${level.replace('LEVEL_', 'Level ')}` : ""}`}
           </p>
         </div>
         {/* <div className="leaderboard-actions">
@@ -300,29 +306,30 @@ export default function LeaderboardPage() {
         </div>
 
         {activeTab === "Period" && (
-          <select
-            className="period-select"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-          >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </select>
-        )}
+          <>
+            <select
+              className="period-select"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+            >
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
 
-        {/* Show level filter for both tabs */}
-        <select
-          className="level-select"
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
-          title="Filter by level (optional)"
-        >
-          {LEVEL_OPTIONS.map((lv) => (
-            <option key={lv || "ALL"} value={lv}>
-              {lv ? lv.replace('LEVEL_', 'Level ') : "All Levels"}
-            </option>
-          ))}
-        </select>
+            <select
+              className="level-select"
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              title="Filter by level (optional)"
+            >
+              {LEVEL_OPTIONS.map((lv) => (
+                <option key={lv || "ALL"} value={lv}>
+                  {lv ? lv.replace('LEVEL_', 'Level ') : "All Levels"}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
 
         <div className="controls-section">
           <input
@@ -403,7 +410,7 @@ export default function LeaderboardPage() {
           <button className="reset-sort-btn" onClick={() => setSort({ key: "rank", dir: "asc" })}>
             Reset Sort
           </button>
-          {(level && level.trim() !== "" || query) && (
+          {((activeTab === "Period" && level && level.trim() !== "") || query) && (
             <button 
               className="reset-sort-btn" 
               onClick={() => {
@@ -417,7 +424,7 @@ export default function LeaderboardPage() {
           )}
           <span className="results-count">
             Showing {pageRows.length} of {filtered.length} players
-            {level && level.trim() !== "" && ` (API filtered by ${level.replace('LEVEL_', 'Level ')})`}
+            {activeTab === "Period" && level && level.trim() !== "" && ` (API filtered by ${level.replace('LEVEL_', 'Level ')})`}
             {query && ` (search: "${query}")`}
           </span>
         </div>
@@ -481,10 +488,12 @@ export default function LeaderboardPage() {
             {!loading && pageRows.length === 0 && (
               <tr>
                 <td colSpan={4} className="empty-row">
-                  {level && level.trim() !== "" 
+                  {activeTab === "Period" && level && level.trim() !== "" 
                     ? `No players found for ${level.replace('LEVEL_', 'Level ')}.`
                     : query 
                     ? `No players found matching "${query}".`
+                    : activeTab === "All-Time" 
+                    ? "No players found."
                     : "No players found in this period."}
                 </td>
               </tr>
