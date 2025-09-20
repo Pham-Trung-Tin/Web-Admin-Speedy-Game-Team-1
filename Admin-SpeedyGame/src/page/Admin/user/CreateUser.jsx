@@ -58,13 +58,23 @@ export default function CreateUser({ onSuccess }) {
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Roles</label>
-            <input name="roles" value={form.roles} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="user, admin (phân cách bằng dấu phẩy)" />
+            <select
+              name="roles"
+              value={form.roles}
+              onChange={handleChange}
+              className="input"
+              style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}}
+              required
+            >
+              <option value="">-- Chọn Role --</option>
+              <option value="user">👤 User</option>
+              <option value="staff">🧑‍💼 Staff</option>
+            </select>
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Level</label>
             <select name="level" value={form.level} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}}>
               <option value="">Chọn cấp độ...</option>
-              <option value="Nhập Môn">Nhập Môn</option>
               <option value="Nhập Môn">Nhập Môn (1-10)</option>
               <option value="Trung cấp">Trung cấp (11-30)</option>
               <option value="Nâng cao">Nâng cao (31-50)</option>

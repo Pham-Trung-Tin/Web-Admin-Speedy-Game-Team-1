@@ -4,7 +4,7 @@ import { authService } from "../../services/authService";
 import CreateUser from "./user/CreateUser";
 import AdminLeaderBoard from "./leaderboard/AdminLeaderBoard";
 import UserList from "./user/UserList";
-import UserManagement from "./user/UserManagement";
+// Đã xoá UserManagement
 import CreateRoom from "./gameRooms/CreateRoom";
 import RoomDetail from "./gameRooms/RoomDetail";
 import ListRooms from "./gameRooms/ListRooms";
@@ -12,6 +12,9 @@ import FilterByRoom from "./FilterByRoom";
 import FilterByPlayer from "./FilterByPlayer";
 import "./Admin.css";
 import ListSessions from "./ListSessions";
+import UserDetail from "./user/UserDetail";
+import EditUser from "./user/EditUser";
+import BanUser from "./user/BanUser";
 
 // ---- Config: quyền hạn cho admin ----
 const ALLOWED_ROLES = ["ADMIN", "staff"];
@@ -537,12 +540,7 @@ const Admin = () => {
           label: "Create User",
           active: activeTab === "CreateUser",
         },
-        {
-          id: "UserManagement",
-          icon: "⚙️",
-          label: "User Management",
-          active: activeTab === "UserManagement",
-        },
+        // Đã xoá UserManagement
       ],
     },
     {
@@ -886,20 +884,29 @@ const Admin = () => {
           {activeTab === "CreateUser" && (
             <CreateUser onSuccess={() => setActiveTab("Users")} />
           )}
-          {activeTab === "UserManagement" && <UserManagement />}
-          {![
-            "Dashboard",
-            "GameRooms",
-            "CreateRoom",
-            "RoomDetails",
-            "GameSessions",
-            "SessionsByRoom",
-            "SessionsByPlayer",
-            "Users",
-            "AllTimeLeaders",
-            "CreateUser",
-            "UserManagement",
-          ].includes(activeTab) && renderDefaultContent()}
+          {/* Đã xoá UserManagement */}
+          {activeTab === "UserDetails" ? (
+            <UserDetail userId={localStorage.getItem("selectedUserId")} />
+          ) : activeTab === "EditUser" ? (
+            <EditUser userId={localStorage.getItem("selectedUserId")} />
+          ) : activeTab === "BanUser" ? (
+            <BanUser />
+          ) : activeTab === "RoomDetails" ? (
+            <RoomDetail />
+          ) : ![
+              "Dashboard",
+              "GameRooms",
+              "CreateRoom",
+              "RoomDetails",
+              "GameSessions",
+              "SessionsByRoom",
+              "SessionsByPlayer",
+              "Users",
+              "AllTimeLeaders",
+              "CreateUser",
+              // "UserManagement", (đã xoá)
+              "BanUser",
+            ].includes(activeTab) && renderDefaultContent()}
         </main>
       </div>
     </div>

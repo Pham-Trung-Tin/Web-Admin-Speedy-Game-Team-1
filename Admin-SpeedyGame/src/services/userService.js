@@ -1,3 +1,9 @@
+export async function deleteUser(id) {
+  return apiFetch(`/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: headersJson(),
+  });
+}
 // services/UserService.js
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -42,15 +48,19 @@ export async function createUser(userData) {
   });
 }
 
-export async function deleteUser(id) {
-  return apiFetch(`/admin/users/${id}`, {
-    method: 'DELETE',
+
+export async function banUser(id) {
+  return apiFetch(`/admin/users/${id}/ban`, {
+    method: 'POST',
     headers: headersJson(),
   });
 }
 
-export default {
-  getUserList,
-  createUser,
-  deleteUser,
-};
+export async function unbanUser(id) {
+  return apiFetch(`/admin/users/${id}/unban`, {
+    method: 'POST',
+    headers: headersJson(),
+  });
+}
+
+
