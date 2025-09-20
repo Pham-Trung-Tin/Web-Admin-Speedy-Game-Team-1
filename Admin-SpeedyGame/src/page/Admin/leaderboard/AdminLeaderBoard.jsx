@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./AdminLeaderBoard.css";
 
-
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const ENDPOINTS = {
   allTime: "leaderboard/top",
@@ -32,7 +30,6 @@ api.interceptors.response.use(
   }
 );
 
-// ---- Helpers/Types ----
 /** @typedef {Object} Player */
 /** @typedef {{
  *  rank?: number,
@@ -50,9 +47,9 @@ api.interceptors.response.use(
 
 const numberFmt = (n) => (n ?? 0).toLocaleString();
 
-// Map API player shape -> our Player (preserve original rank)
 const normalizePlayer = (p, idx) => {
-  const score = p.totalScore ?? p.score ?? 0;
+  // Map fields according to actual API response structure
+  const score = p.score ?? p.totalScore ?? 0;
   const games = p.games ?? p.matches ?? 0;
   const wins = p.wins ?? p.victories ?? 0;
   const winRate =
@@ -67,16 +64,16 @@ const normalizePlayer = (p, idx) => {
   const origRank = p.rank ?? idx + 1;
 
   return {
-    rank: origRank,          // rank from API (keep)
-    _origRank: origRank,     // ORIGINAL rank to sort/display
-    id: p.id ?? p.userId ?? p.username ?? idx,
+    rank: origRank,
+    _origRank: origRank,
+    id: p.userId ?? p.id ?? p.username ?? idx,
     username: p.username ?? p.name ?? `Player ${idx + 1}`,
     score: Number(score ?? 0),
-    level: p.level ?? 1,
+    level: p.level ?? "LEVEL_1",
     games: Number(games ?? 0),
     wins: Number(wins ?? 0),
     winRate,
-    avatar: p.avatar ?? "👤",
+    avatar: p.avatar && p.avatar !== "default-avatar.png" ? p.avatar : "👤",
   };
 };
 
@@ -86,7 +83,7 @@ const FAKE_DATA = Array.from({ length: 20 })
     rank: i + 1,
     username: `player_${i + 1}`,
     totalScore: Math.floor(250000 - i * 2345 + (i % 7) * 321),
-    level: String(1 + ((i * 3) % 90)),
+    level: `LEVEL_${1 + ((i * 2) % 10)}`, // Generate LEVEL_1 to LEVEL_10
     games: 50 + ((i * 7) % 530),
     wins: 25 + ((i * 5) % 400),
     winRate: Math.min(100, 40 + ((i * 3) % 55)),
@@ -94,9 +91,13 @@ const FAKE_DATA = Array.from({ length: 20 })
   }))
   .map(normalizePlayer);
 
+// Optional: list levels that match your backend (e.g., LEVEL_1, LEVEL_2, …)
+const LEVEL_OPTIONS = ["", "LEVEL_1", "LEVEL_2", "LEVEL_3", "LEVEL_4", "LEVEL_5", "LEVEL_6", "LEVEL_7", "LEVEL_8", "LEVEL_9", "LEVEL_10"];
+
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState("All-Time"); // "All-Time" | "Period"
   const [period, setPeriod] = useState("week"); // week | month
+  const [level, setLevel] = useState(""); // "" (no filter) | "LEVEL_1" | "LEVEL_2" | ...
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10; // fixed UI page size
@@ -138,9 +139,12 @@ export default function LeaderboardPage() {
 
         if (activeTab === "All-Time") {
           url = ENDPOINTS.allTime;
+          // Include level filter for All-Time as well (only if a specific level is selected)
+          if (level && level.trim() !== "") params.level = level;
         } else {
           url = ENDPOINTS.period;
-          params.period = period;
+          params.period = period;             // week | month
+          if (level && level.trim() !== "") params.level = level;    // optional filter (only if specific level selected)
         }
 
         const [res, totalCount] = await Promise.all([
@@ -152,32 +156,44 @@ export default function LeaderboardPage() {
         const rows = Array.isArray(json) ? json : json.items ?? json.data ?? json;
         const normalized = (rows || []).map(normalizePlayer);
 
-        if (!cancelled) {
-          const fallback = normalized.length ? normalized : FAKE_DATA;
-          setPlayers(fallback);
+        console.log("API Response:", {
+          activeTab,
+          period,
+          level,
+          url,
+          params,
+          jsonResponse: json,
+          rowsExtracted: rows,
+          normalizedData: normalized
+        });
 
-          const highest = fallback.reduce((m, p) => Math.max(m, p.score ?? 0), 0);
+        if (!cancelled) {
+          // Always use API data, even if empty
+          setPlayers(normalized);
+
+          const highest = normalized.reduce((m, p) => Math.max(m, p.score ?? 0), 0);
           let totalPlayers;
           if (totalCount !== null) {
             totalPlayers = totalCount;
-          } else if (json?.total && typeof json.total === "number") {
+          } else if (json?.total !== undefined && typeof json.total === "number") {
             totalPlayers = json.total;
           } else {
-            totalPlayers = fallback.length;
+            totalPlayers = normalized.length;
           }
-          const totalGames = fallback.reduce((s, p) => s + (p.games || 0), 0);
+          const totalGames = normalized.reduce((s, p) => s + (p.games || 0), 0);
           setStats({ maxScore: highest, totalPlayers, totalGames });
         }
       } catch (e) {
-        console.warn("Leaderboard API error, falling back to fake data:", e);
+        console.error("Leaderboard API error:", e);
         if (!cancelled) {
-          setPlayers(FAKE_DATA);
+          // Don't use fake data, just show empty state with error
+          setPlayers([]);
           setStats({
-            maxScore: FAKE_DATA.reduce((m, p) => Math.max(m, p.score), 0),
-            totalPlayers: FAKE_DATA.length,
-            totalGames: FAKE_DATA.reduce((s, p) => s + (p.games || 0), 0),
+            maxScore: 0,
+            totalPlayers: 0,
+            totalGames: 0,
           });
-          setError(String(e?.message ?? e));
+          setError(`API Error: ${e?.response?.data?.message || e?.message || "Failed to fetch leaderboard data"}`);
         }
       } finally {
         !cancelled && setLoading(false);
@@ -188,7 +204,7 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, period, limit]);
+  }, [activeTab, period, level, limit]); // <-- include `level`
 
   // Filter + Sort (DO NOT mutate original rank)
   const filtered = useMemo(() => {
@@ -196,16 +212,21 @@ export default function LeaderboardPage() {
 
     let rows = players.map((p, i) => ({
       ...p,
-      _origRank: p._origRank ?? p.rank ?? i + 1, // ensure exists
+      _origRank: p._origRank ?? p.rank ?? i + 1,
     }));
 
+    // Only filter by username search query - level filtering is handled by API
     if (q) {
-      rows = rows.filter((r) => `${r.username}`.toLowerCase().includes(q));
+      rows = rows.filter((r) => {
+        const username = String(r.username || "").toLowerCase();
+        return username.includes(q);
+      });
     }
 
+    // Sort the results
     if (sort.dir) {
       const dir = sort.dir === "asc" ? 1 : -1;
-      const key = sort.key === "rank" ? "_origRank" : sort.key; // sort by original rank when key is 'rank'
+      const key = sort.key === "rank" ? "_origRank" : sort.key;
 
       rows.sort((a, b) => {
         const ka = a[key];
@@ -220,12 +241,11 @@ export default function LeaderboardPage() {
       });
     }
 
-    return rows; // NO displayRank here
-  }, [players, query, sort]);
+    return rows;
+  }, [players, query, sort]); // Remove 'level' from dependencies since we don't filter by it on frontend
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
-  // current page rows (no displayRank)
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;
     const end = page * pageSize;
@@ -234,7 +254,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort, activeTab, period, limit]);
+  }, [query, sort, activeTab, period, level, limit]);
 
   const resetRankings = async () => {
     const ok = confirm("Are you sure you want to reset rankings? This action cannot be undone.");
@@ -255,8 +275,8 @@ export default function LeaderboardPage() {
           <h1>{activeTab === "All-Time" ? "All-Time Leaderboard" : "Period Leaderboard"}</h1>
           <p>
             {activeTab === "All-Time"
-              ? "Top performing players of all time"
-              : `Top players by ${period}`}
+              ? `Top performing players of all time${level ? ` • ${level.replace('LEVEL_', 'Level ')}` : ""}`
+              : `Top players by ${period}${level ? ` • ${level.replace('LEVEL_', 'Level ')}` : ""}`}
           </p>
         </div>
         {/* <div className="leaderboard-actions">
@@ -289,6 +309,20 @@ export default function LeaderboardPage() {
             <option value="month">This Month</option>
           </select>
         )}
+
+        {/* Show level filter for both tabs */}
+        <select
+          className="level-select"
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          title="Filter by level (optional)"
+        >
+          {LEVEL_OPTIONS.map((lv) => (
+            <option key={lv || "ALL"} value={lv}>
+              {lv ? lv.replace('LEVEL_', 'Level ') : "All Levels"}
+            </option>
+          ))}
+        </select>
 
         <div className="controls-section">
           <input
@@ -369,8 +403,22 @@ export default function LeaderboardPage() {
           <button className="reset-sort-btn" onClick={() => setSort({ key: "rank", dir: "asc" })}>
             Reset Sort
           </button>
+          {(level && level.trim() !== "" || query) && (
+            <button 
+              className="reset-sort-btn" 
+              onClick={() => {
+                setLevel("");
+                setQuery("");
+              }}
+              title="Clear all filters"
+            >
+              Clear Filters
+            </button>
+          )}
           <span className="results-count">
             Showing {pageRows.length} of {filtered.length} players
+            {level && level.trim() !== "" && ` (API filtered by ${level.replace('LEVEL_', 'Level ')})`}
+            {query && ` (search: "${query}")`}
           </span>
         </div>
       </div>
@@ -415,7 +463,15 @@ export default function LeaderboardPage() {
                     </div>
                   </td>
                   <td>
-                    <span className="level-badge">{p.level}</span>
+                    <span 
+                      className="level-badge" 
+                      data-level={p.level}
+                      title={`Player Level: ${p.level}`}
+                    >
+                      {typeof p.level === 'string' && p.level.startsWith('LEVEL_') 
+                        ? p.level.replace('LEVEL_', 'LV ') 
+                        : `LV ${p.level}`}
+                    </span>
                   </td>
                   <td>
                     <span className="score-value">{numberFmt(p.score)}</span>
@@ -425,7 +481,11 @@ export default function LeaderboardPage() {
             {!loading && pageRows.length === 0 && (
               <tr>
                 <td colSpan={4} className="empty-row">
-                  No players found.
+                  {level && level.trim() !== "" 
+                    ? `No players found for ${level.replace('LEVEL_', 'Level ')}.`
+                    : query 
+                    ? `No players found matching "${query}".`
+                    : "No players found in this period."}
                 </td>
               </tr>
             )}
