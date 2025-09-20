@@ -73,41 +73,136 @@ const fetchDashboardStats = async () => {
 };
 
 // Fetch user activity trends (7 days)
-const fetchUserActivityTrends = async () => {
-  const token = localStorage.getItem("access_token");
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  // TODO: Replace with real API if available
-  // const res = await fetch(`${API_BASE_URL}/admin/users/activity?period=7d`, { headers });
-  // const data = await res.json();
-  // return data.days; // [{day: 'Mon', count: 123}, ...]
-  // Mock data:
-  return [
-    { day: "Mon", count: 120 },
-    { day: "Tue", count: 180 },
-    { day: "Wed", count: 90 },
-    { day: "Thu", count: 200 },
-    { day: "Fri", count: 150 },
-    { day: "Sat", count: 170 },
-    { day: "Sun", count: 210 },
-  ];
+
+// helper: tìm token trong localStorage (tên khác nhau tuỳ app)
+const getAccessToken = () => {
+  // common keys
+  const maybe =
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token");
+  if (maybe) return maybe;
+
+  // case: authData lưu object JSON
+  try {
+    const authDataRaw =
+      localStorage.getItem("authData") || localStorage.getItem("auth");
+    if (authDataRaw) {
+      const obj = JSON.parse(authDataRaw);
+      return obj?.access_token || obj?.accessToken || obj?.token || null;
+    }
+  } catch (e) {
+    // ignore parse errors
+  }
+  return null;
+};
+
+const fetchUserActivityTrends = async (daysCount = 7) => {
+  try {
+    const token = getAccessToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // Lấy users (cố gắng tăng limit để có đủ record trong 7 ngày)
+    const res = await fetch(
+      `${API_BASE_URL}/admin/users?limit=1000&sort=createdAt:desc`,
+      { headers }
+    );
+    if (res.status === 401) {
+      console.warn("[fetchUserActivityTrends] 401 Unauthorized");
+      throw new Error("Unauthorized");
+    }
+    if (!res.ok) throw new Error("Failed to fetch users: " + res.status);
+
+    const body = await res.json();
+    const users = Array.isArray(body) ? body : body.items || body.data || [];
+
+    // chuẩn bị 7 ngày gần nhất dạng yyyy-mm-dd
+    const today = new Date();
+    const days = Array.from({ length: daysCount }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (daysCount - 1 - i));
+      return d;
+    });
+    const dayKeys = days.map((d) => d.toISOString().split("T")[0]);
+
+    // init counters
+    const counts = dayKeys.reduce((acc, k) => ((acc[k] = 0), acc), {});
+
+    // đếm dựa trên createdAt (thử nhiều tên trường)
+    users.forEach((u) => {
+      const createdAt =
+        u.createdAt || u.created_at || u.created || u.createdDate;
+      if (!createdAt) return;
+      const key = new Date(createdAt).toISOString().split("T")[0];
+      if (counts.hasOwnProperty(key)) counts[key] += 1;
+    });
+
+    // trả về dạng [{day: 'Mon', count: 12}, ...] để phù hợp UI hiện tại
+    return dayKeys.map((k) => {
+      const d = new Date(k);
+      const weekday = d.toLocaleDateString(undefined, { weekday: "short" }); // Mon, Tue ...
+      return { day: weekday, count: counts[k] || 0 };
+    });
+  } catch (err) {
+    console.error("Error fetching user activity trends:", err);
+
+    // fallback (nếu không thể lấy thật) — giữ mock cũ để UI không trống
+    return [
+      { day: "Mon", count: 120 },
+      { day: "Tue", count: 180 },
+      { day: "Wed", count: 90 },
+      { day: "Thu", count: 200 },
+      { day: "Fri", count: 150 },
+      { day: "Sat", count: 170 },
+      { day: "Sun", count: 210 },
+    ];
+  }
 };
 
 // Fetch room types distribution
+// const fetchRoomTypesDistribution = async () => {
+//   const token = localStorage.getItem("access_token");
+//   const headers = token ? { Authorization: `Bearer ${token}` } : {};
+//   // Fetch all rooms and group by status
+//   const res = await fetch(`${API_BASE_URL}/admin/game-rooms`, { headers });
+//   const data = await res.json();
+//   const items = data.items || [];
+//   const counts = { active: 0, waiting: 0, live: 0 };
+//   items.forEach((room) => {
+//     if (room.status === "active") counts.active += 1;
+//     else if (room.status === "waiting") counts.waiting += 1;
+//     else if (room.status === "live") counts.live += 1;
+//   });
+//   return counts;
+// };
 const fetchRoomTypesDistribution = async () => {
-  const token = localStorage.getItem("access_token");
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  // Fetch all rooms and group by status
-  const res = await fetch(`${API_BASE_URL}/admin/game-rooms`, { headers });
-  const data = await res.json();
-  const items = data.items || [];
-  const counts = { active: 0, waiting: 0, live: 0 };
-  items.forEach((room) => {
-    if (room.status === "active") counts.active += 1;
-    else if (room.status === "waiting") counts.waiting += 1;
-    else if (room.status === "live") counts.live += 1;
-  });
-  return counts;
+  try {
+    const token = getAccessToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch(`${API_BASE_URL}/admin/game-rooms?limit=1000`, { headers });
+    if (res.status === 401) {
+      console.warn("[fetchRoomTypesDistribution] 401 Unauthorized");
+      throw new Error("Unauthorized");
+    }
+    if (!res.ok) throw new Error("Failed to fetch rooms: " + res.status);
+
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : data.items || data.data || [];
+
+    const counts = { active: 0, waiting: 0, live: 0 };
+    items.forEach((room) => {
+      const s = (room.status || "").toString().toLowerCase();
+      if (s.includes("active")) counts.active += 1;
+      else if (s.includes("waiting")) counts.waiting += 1;
+      else if (s.includes("live")) counts.live += 1;
+    });
+    return counts;
+  } catch (err) {
+    console.error("Error fetching room types:", err);
+    return { active: 0, waiting: 0, live: 0 };
+  }
 };
+
 
 const fetchRecentActivities = async () => {
   const token = localStorage.getItem("access_token");
@@ -328,19 +423,19 @@ const Admin = () => {
   if (!hasAccess) {
     const handleBackToLogin = () => {
       try {
-        console.log('Navigating to login page...');
+        console.log("Navigating to login page...");
         // Clear any stored auth data
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_profile');
-        localStorage.removeItem('authData');
-        
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user_profile");
+        localStorage.removeItem("authData");
+
         // Navigate to login
-        navigate('/login', { replace: true });
+        navigate("/login", { replace: true });
       } catch (error) {
-        console.error('Navigation error:', error);
+        console.error("Navigation error:", error);
         // Fallback: use window.location
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     };
 
@@ -352,8 +447,8 @@ const Admin = () => {
         <p>
           Required roles: <strong>ADMIN</strong> or <strong>staff</strong>
         </p>
-        <button 
-          className="btn btn-primary back-to-login-btn" 
+        <button
+          className="btn btn-primary back-to-login-btn"
           onClick={handleBackToLogin}
           type="button"
         >
