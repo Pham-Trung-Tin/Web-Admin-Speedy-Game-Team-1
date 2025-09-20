@@ -105,7 +105,7 @@ const CreateRoom = () => {
   };
 
   return (
-    <div className="game-room-page">
+    <div className="create-room-page">
       <div className="page-content">
         <h2>Create Room</h2>
         {errorMsg && <div className="error-message">{errorMsg}</div>}

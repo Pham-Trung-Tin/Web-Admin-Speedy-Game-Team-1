@@ -139,7 +139,7 @@ const RoomDetail = () => {
   if (!room) return <p>Room not found.</p>;
 
   return (
-    <div className="game-room-page">
+    <div className="room-detail-page">
       <div className="page-content">
         <h2>Room Detail</h2>
         {errorMsg && <div className="error-message">{errorMsg}</div>}
