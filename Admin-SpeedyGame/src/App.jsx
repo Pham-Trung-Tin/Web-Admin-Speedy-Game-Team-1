@@ -6,6 +6,8 @@ import ResetPassword from "./page/authentication/ResetPassword";
 import VerifyEmail from "./page/authentication/VerifyEmail";
 import Admin from "./page/Admin/Admin";
 import Profile from "./page/Admin/profileAdmin/Profile";
+import UserDetail from "./page/Admin/user/UserDetail";
+import EditUser from "./page/Admin/user/EditUser";
 import "./App.css";
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />       
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/profile" element={<Profile />} />
+        <Route path="/admin/user/:id" element={<UserDetail />} />
+        <Route path="/admin/user/:id/edit" element={<EditUser />} />
       </Routes>
     </BrowserRouter>
   );
