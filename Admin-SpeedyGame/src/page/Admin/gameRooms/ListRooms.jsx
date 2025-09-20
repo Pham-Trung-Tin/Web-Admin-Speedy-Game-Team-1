@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GameRoomService } from "../../../services/gameRoomService";
 import "./gameRoom.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -71,6 +72,24 @@ const ListRooms = () => {
       setLoading(true);
       setErrorMsg("");
 
+      // Try new GameRoom API first
+      try {
+        const publicRoomsData = await GameRoomService.getPublicRooms({
+          page: 1,
+          limit: 100, // Get more rooms for better filtering
+          difficulty: difficulty || undefined,
+        });
+        
+        if (publicRoomsData?.data && Array.isArray(publicRoomsData.data)) {
+          setRooms(publicRoomsData.data);
+          setCurrentPage(1);
+          return;
+        }
+      } catch (apiError) {
+        console.warn("New GameRoom API failed, falling back to admin API:", apiError);
+      }
+
+      // Fallback to existing admin API
       const params = new URLSearchParams();
       if (status) params.append("status", status);
       if (difficulty) params.append("difficulty", difficulty);

@@ -8,10 +8,11 @@ import UserList from "./user/UserList";
 import CreateRoom from "./gameRooms/CreateRoom";
 import RoomDetail from "./gameRooms/RoomDetail";
 import ListRooms from "./gameRooms/ListRooms";
-import FilterByRoom from "./FilterByRoom";
-import FilterByPlayer from "./FilterByPlayer";
+import PublicRooms from "./gameRooms/PublicRooms";
+import FilterByRoom from "../gameSession/FilterByRoom";
+import FilterByPlayer from "../gameSession/FilterByPlayer";
 import "./Admin.css";
-import ListSessions from "./ListSessions";
+import ListSessions from "../gameSession/ListSessions";
 import UserDetail from "./user/UserDetail";
 import EditUser from "./user/EditUser";
 import BanUser from "./user/BanUser";
@@ -538,6 +539,12 @@ const Admin = () => {
           active: activeTab === "GameRooms",
         },
         {
+          id: "PublicRooms",
+          icon: "🌐",
+          label: "Public Rooms",
+          active: activeTab === "PublicRooms",
+        },
+        {
           id: "CreateRoom",
           icon: "➕",
           label: "Create Room",
@@ -797,6 +804,8 @@ const Admin = () => {
   );
 
   const renderGameRooms = () => <ListRooms />;
+  
+  const renderPublicRooms = () => <PublicRooms />;
 
   const renderCreateRoom = () => <CreateRoom />;
 
@@ -808,26 +817,7 @@ const Admin = () => {
 
   const renderAllTimeLeaders = () => <AdminLeaderBoard />;
 
-  const renderDefaultContent = () => (
-    <div className="page-content">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">{activeTab}</h1>
-          <p className="page-subtitle">This section is under development</p>
-        </div>
-      </div>
-      <div className="content-section">
-        <div className="placeholder-content">
-          <div className="placeholder-icon">🚧</div>
-          <h3>Coming Soon</h3>
-          <p>
-            This feature is currently being developed and will be available
-            soon.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  
 
   return (
     <div className="admin-container">
@@ -917,6 +907,7 @@ const Admin = () => {
         <main className="main-content">
           {activeTab === "Dashboard" && renderDashboard()}
           {activeTab === "GameRooms" && renderGameRooms()}
+          {activeTab === "PublicRooms" && renderPublicRooms()}
           {activeTab === "CreateRoom" && renderCreateRoom()}
           {activeTab === "RoomDetails" && renderRoomDetails()}
           {activeTab === "GameSessions" && renderGameSessions()}
@@ -934,8 +925,6 @@ const Admin = () => {
             <EditUser userId={localStorage.getItem("selectedUserId")} />
           ) : activeTab === "BanUser" ? (
             <BanUser />
-          ) : activeTab === "RoomDetails" ? (
-            <RoomDetail />
           ) : ![
               "Dashboard",
               "GameRooms",
@@ -949,7 +938,7 @@ const Admin = () => {
               "CreateUser",
               // "UserManagement", (đã xoá)
               "BanUser",
-            ].includes(activeTab) && renderDefaultContent()}
+            ].includes(activeTab)}
         </main>
       </div>
 

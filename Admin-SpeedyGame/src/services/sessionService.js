@@ -98,6 +98,118 @@ export const getSessionsByPlayer = async (playerValue, isUsername = false) => {
   return processedData;
 };
 
+export const getSessionsByRoomWithParams = async (roomIdOrCode, params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/game-sessions/by-room/${roomIdOrCode}${queryString ? `?${queryString}` : ''}`;
+  
+  console.log("API Call Details:", {
+    baseURL,
+    endpoint,
+    fullURL: `${baseURL}${endpoint}`,
+    roomIdOrCode,
+    params,
+    queryString
+  });
+  
+  const res = await api.get(endpoint);
+  console.log("Raw response from getSessionsByRoomWithParams at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", res);
+  console.log("Response data:", res.data);
+  console.log("Response status:", res.status);
+  console.log("Response headers:", res.headers);
+  
+  // Handle different response structures
+  let processedData;
+  if (res.data && typeof res.data === 'object') {
+    if (Array.isArray(res.data.data)) {
+      // Response has data wrapper
+      processedData = {
+        data: res.data.data.map(session => ({
+          ...session,
+          name: session.name || session.roomCode || "Unnamed"
+        })),
+        total: res.data.total || res.data.data.length,
+        page: res.data.page || params.page || 1,
+        limit: res.data.limit || params.limit || 20
+      };
+    } else if (Array.isArray(res.data)) {
+      // Response is direct array
+      processedData = {
+        data: res.data.map(session => ({
+          ...session,
+          name: session.name || session.roomCode || "Unnamed"
+        })),
+        total: res.data.length,
+        page: params.page || 1,
+        limit: params.limit || 20
+      };
+    } else {
+      // Single object or other structure
+      processedData = res.data;
+    }
+  } else {
+    processedData = { data: [], total: 0, page: 1, limit: 20 };
+  }
+  
+  console.log("Processed data from getSessionsByRoomWithParams at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", processedData);
+  return processedData;
+};
+
+export const getSessionsByPlayerWithParams = async (userId, params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  const endpoint = `/game-sessions/by-player/${userId}${queryString ? `?${queryString}` : ''}`;
+  
+  console.log("API Call Details:", {
+    baseURL,
+    endpoint,
+    fullURL: `${baseURL}${endpoint}`,
+    userId,
+    params,
+    queryString
+  });
+  
+  const res = await api.get(endpoint);
+  console.log("Raw response from getSessionsByPlayerWithParams at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", res);
+  console.log("Response data:", res.data);
+  console.log("Response status:", res.status);
+  console.log("Response headers:", res.headers);
+  
+  // Handle different response structures
+  let processedData;
+  if (res.data && typeof res.data === 'object') {
+    if (Array.isArray(res.data.data)) {
+      // Response has data wrapper
+      processedData = {
+        data: res.data.data.map(session => ({
+          ...session,
+          name: session.name || session.roomCode || "Unnamed"
+        })),
+        total: res.data.total || res.data.data.length,
+        page: res.data.page || params.page || 1,
+        limit: res.data.limit || params.limit || 20
+      };
+    } else if (Array.isArray(res.data)) {
+      // Response is direct array
+      processedData = {
+        data: res.data.map(session => ({
+          ...session,
+          name: session.name || session.roomCode || "Unnamed"
+        })),
+        total: res.data.length,
+        page: params.page || 1,
+        limit: params.limit || 20
+      };
+    } else {
+      // Single object or other structure
+      processedData = res.data;
+    }
+  } else {
+    processedData = { data: [], total: 0, page: 1, limit: 20 };
+  }
+  
+  console.log("Processed data from getSessionsByPlayerWithParams at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", processedData);
+  return processedData;
+};
+
 export const createSession = async (data = {}) => {
   const username = getUserFromToken();
   const defaultData = {
@@ -108,4 +220,17 @@ export const createSession = async (data = {}) => {
   const res = await api.post("/game-sessions", defaultData);
   console.log("Created session at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", res.data);
   return res.data;
+};
+
+export const claimEndBonus = async (sessionId, boostType = "NONE") => {
+  try {
+    const res = await api.post(`/player-sessions/${sessionId}/claim-end-bonus`, {
+      boostType
+    });
+    console.log("Claimed bonus at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", res.data);
+    return res.data;
+  } catch (error) {
+    console.error("Error claiming bonus at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", error);
+    throw error;
+  }
 };
