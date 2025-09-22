@@ -136,7 +136,7 @@ const fetchUserActivityTrends = async (daysCount = 7) => {
         u.createdAt || u.created_at || u.created || u.createdDate;
       if (!createdAt) return;
       const key = new Date(createdAt).toISOString().split("T")[0];
-      if (counts.hasOwnProperty(key)) counts[key] += 1;
+      if (Object.prototype.hasOwnProperty.call(counts, key)) counts[key] += 1;
     });
 
     // trả về dạng [{day: 'Mon', count: 12}, ...] để phù hợp UI hiện tại
@@ -326,7 +326,7 @@ const Admin = () => {
       color: "orange",
     },
   ]);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const [, setLoadingStats] = useState(false);
   const [userTrends, setUserTrends] = useState([]);
   const [roomTypes, setRoomTypes] = useState({
     active: 0,
