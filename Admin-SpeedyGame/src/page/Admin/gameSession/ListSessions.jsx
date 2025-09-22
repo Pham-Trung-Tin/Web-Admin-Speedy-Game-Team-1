@@ -9,9 +9,9 @@ const ListSessions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
-  const [clientPage, setClientPage] = useState(1);
-  const pageSize = 10; // UI pagination size
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 10; // Items per page
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -20,73 +20,113 @@ const ListSessions = () => {
       const params = {
         state: status ? status.toLowerCase() : undefined,
         roomCode: roomCode.trim() || undefined,
-        page: 1, // Always fetch from page 1
-        limit,
+        page: currentPage,
+        limit: pageSize,
       };
       Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
 
+      console.log("Fetching sessions with params:", params);
       const data = await getSessions(params, { headers: { "Cache-Control": "no-cache" } });
+      console.log("Raw API response:", data);
+      
       let sessionsData = [];
       let totalItems = 0;
 
-      if (Array.isArray(data)) {
-        sessionsData = data;
-        totalItems = data.length;
-      } else if (Array.isArray(data?.data)) {
-        sessionsData = data.data;
-        totalItems = data.total || data.count || sessionsData.length;
-      } else if (Array.isArray(data?.items)) {
-        sessionsData = data.items;
-        totalItems = data.total || data.count || sessionsData.length;
+      // Handle different response structures more carefully
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data)) {
+          // Direct array response
+          sessionsData = data;
+          totalItems = data.length;
+        } else if (Array.isArray(data.data)) {
+          // Response with data wrapper
+          sessionsData = data.data;
+          // Try multiple fields for total count
+          totalItems = data.total || data.count || data.totalCount || data.totalItems || 
+                      data.pagination?.total || data.meta?.total || sessionsData.length;
+        } else if (Array.isArray(data.items)) {
+          // Response with items wrapper
+          sessionsData = data.items;
+          totalItems = data.total || data.count || data.totalCount || data.totalItems || 
+                      data.pagination?.total || data.meta?.total || sessionsData.length;
+        } else if (data.result && Array.isArray(data.result)) {
+          // Response with result wrapper
+          sessionsData = data.result;
+          totalItems = data.total || data.count || data.totalCount || data.totalItems || 
+                      data.pagination?.total || data.meta?.total || sessionsData.length;
+        } else {
+          console.warn("Unexpected response structure:", data);
+          sessionsData = [];
+          totalItems = 0;
+        }
+      } else {
+        console.warn("Invalid response data:", data);
+        sessionsData = [];
+        totalItems = 0;
       }
 
-      console.log("Fetched sessions at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", sessionsData);
+      // If total is still 0 but we have data, use length as fallback
+      if (totalItems === 0 && sessionsData.length > 0) {
+        totalItems = sessionsData.length;
+        console.warn("Using sessionsData.length as totalItems fallback:", totalItems);
+      }
+
+      console.log("Fetched sessions at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", {
+        sessionsData: sessionsData.length,
+        totalItems,
+        currentPage,
+        totalPages: Math.ceil(totalItems / pageSize),
+        status: status,
+        responseStructure: {
+          isArray: Array.isArray(data),
+          hasData: !!data?.data,
+          hasItems: !!data?.items,
+          hasResult: !!data?.result,
+          totalField: data?.total,
+          countField: data?.count,
+          totalCountField: data?.totalCount
+        }
+      });
+      
       setSessions(sessionsData);
       setTotal(totalItems);
+      setTotalPages(Math.ceil(totalItems / pageSize));
     } catch (err) {
       console.error("❌ Error fetching sessions at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", err);
-      setError("Không lấy được danh sách sessions. Vui lòng thử lại.");
+      console.error("Error details:", err.response?.data || err.message);
+      setError(`Không lấy được danh sách sessions. Lỗi: ${err.response?.data?.message || err.message}`);
       setSessions([]);
       setTotal(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [status, roomCode, limit]);
+  }, [status, roomCode, currentPage, pageSize]);
 
   useEffect(() => {
     fetchSessions();
-  }, [status, fetchSessions]);
+  }, [fetchSessions]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (roomCode) fetchSessions();
-      if (!roomCode && !status) fetchSessions();
+      if (roomCode || !roomCode) {
+        setCurrentPage(1); // Reset to page 1 when searching or clearing
+      }
     }, 400);
     return () => clearTimeout(timer);
-  }, [roomCode, status, fetchSessions]);
+  }, [roomCode]);
 
-  // Reset client page when limit changes
+  // Reset to page 1 when status filter changes
   useEffect(() => {
-    setClientPage(1);
-  }, [limit]);
-
-  // Reset client page when sessions data changes
-  useEffect(() => {
-    setClientPage(1);
-  }, [sessions]);
+    setCurrentPage(1);
+  }, [status]);
 
   const clearFilters = () => {
     setStatus("");
     setRoomCode("");
-    setClientPage(1);
-    setLimit(10);
+    setCurrentPage(1);
     fetchSessions();
   };
-
-  const totalPages = Math.ceil(sessions.length / pageSize);
-  const startIndex = (clientPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const currentPageSessions = sessions.slice(startIndex, endIndex);
 
   return (
     <div className="p-6">
@@ -109,21 +149,6 @@ const ListSessions = () => {
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value)}
         />
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Limit:</label>
-          <select
-            className="border px-2 py-2 rounded"
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            title="Number of sessions to fetch from API"
-          >
-            {[10, 20, 30, 50, 80, 100].map((n) => (
-              <option key={n} value={n}>
-                List {n}
-              </option>
-            ))}
-          </select>
-        </div>
         <button
           onClick={fetchSessions}
           disabled={loading}
@@ -142,33 +167,41 @@ const ListSessions = () => {
       {loading && <p>Loading...</p>}
       {!loading && !error && sessions.length > 0 && (
         <>
-          <SessionTable sessions={currentPageSessions} />
-          {totalPages > 1 && (
-            <div className="flex gap-2 justify-between items-center mt-4">
-              {/* <div className="text-sm text-gray-600">
-                Hiển thị {Math.min(startIndex + 1, sessions.length)}-{Math.min(endIndex, sessions.length)} trong tổng số {sessions.length} sessions 
-                {sessions.length >= limit ? ` (giới hạn ${limit} từ API)` : ''}
-                • Mỗi trang tối đa 10 sessions
-              </div> */}
+          <SessionTable sessions={sessions} />
+          <div className="flex gap-2 justify-between items-center mt-4">
+            <div className="text-sm text-gray-600">
+              {totalPages > 1 ? (
+                `Trang ${currentPage} / ${totalPages} - Tổng cộng ${total} sessions`
+              ) : (
+                `Tổng cộng ${total || sessions.length} sessions`
+              )}
+            </div>
+            {totalPages > 1 && (
               <div className="flex gap-2 items-center">
                 <button
-                  onClick={() => setClientPage((p) => Math.max(p - 1, 1))}
-                  disabled={clientPage === 1}
+                  onClick={() => {
+                    console.log("Prev clicked, current page:", currentPage);
+                    setCurrentPage((p) => Math.max(p - 1, 1));
+                  }}
+                  disabled={currentPage === 1 || loading}
                   className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
                 >
                   Prev
                 </button>
-                <span className="px-3 py-1 bg-gray-100 rounded">Trang {clientPage} / {totalPages}</span>
+                <span className="px-3 py-1 bg-gray-100 rounded">Trang {currentPage} / {totalPages}</span>
                 <button
-                  onClick={() => setClientPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={clientPage === totalPages}
+                  onClick={() => {
+                    console.log("Next clicked, current page:", currentPage, "total pages:", totalPages);
+                    setCurrentPage((p) => Math.min(p + 1, totalPages));
+                  }}
+                  disabled={currentPage === totalPages || loading}
                   className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
                 >
                   Next
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
       {!loading && !error && sessions.length === 0 && (
