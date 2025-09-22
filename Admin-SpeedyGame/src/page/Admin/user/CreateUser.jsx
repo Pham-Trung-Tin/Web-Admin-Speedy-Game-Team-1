@@ -76,9 +76,6 @@ export default function CreateUser({ onSuccess }) {
             <select name="level" value={form.level} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}}>
               <option value="">Chọn cấp độ...</option>
               <option value="Nhập Môn">Nhập Môn (1-10)</option>
-              <option value="Trung cấp">Trung cấp (11-30)</option>
-              <option value="Nâng cao">Nâng cao (31-50)</option>
-              <option value="Chuyên gia">Chuyên gia (50+)</option>
             </select>
           </div>
           <div className="form-group" style={{marginBottom:16}}>

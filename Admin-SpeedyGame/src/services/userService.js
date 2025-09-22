@@ -1,3 +1,9 @@
+export async function getUserById(id) {
+  return apiFetch(`/admin/users/${id}`, {
+    method: 'GET',
+    headers: headersJson(),
+  });
+}
 export async function deleteUser(id) {
   // Use soft delete by updating status to 'deleted'
   return apiFetch(`/admin/users/${id}`, {
@@ -38,8 +44,18 @@ async function apiFetch(path, options = {}) {
 }
 
 // Admin endpoints: list/create/delete users
-export async function getUserList() {
-  return apiFetch('/admin/users', { method: 'GET', headers: headersJson() });
+// params: { page, limit, search, status, role, sortBy, sortOrder }
+export async function getUserList(params = {}) {
+  const query = [];
+  if (params.page) query.push(`page=${params.page}`);
+  if (params.limit) query.push(`limit=${params.limit}`);
+  if (params.search) query.push(`search=${encodeURIComponent(params.search)}`);
+  if (params.status) query.push(`status=${encodeURIComponent(params.status)}`);
+  if (params.role) query.push(`role=${encodeURIComponent(params.role)}`);
+  if (params.sortBy) query.push(`sortBy=${encodeURIComponent(params.sortBy)}`);
+  if (params.sortOrder) query.push(`sortOrder=${encodeURIComponent(params.sortOrder)}`);
+  const url = '/admin/users' + (query.length ? `?${query.join('&')}` : '');
+  return apiFetch(url, { method: 'GET', headers: headersJson() });
 }
 
 export async function createUser(userData) {
