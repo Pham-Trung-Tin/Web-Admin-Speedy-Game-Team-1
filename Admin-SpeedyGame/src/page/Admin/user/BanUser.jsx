@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { getUserList, banUser, unbanUser } from '../../../services/userService';
+import { getUserById, banUser, unbanUser } from '../../../services/userService';
 
 const BanUser = () => {
   const [user, setUser] = useState(null);
@@ -16,11 +16,9 @@ const BanUser = () => {
       setLoading(false);
       return;
     }
-    getUserList()
+    getUserById(userId)
       .then(data => {
-        const users = Array.isArray(data) ? data : (data?.items || []);
-        const found = users.find(u => (u._id || u.id) === userId);
-        if (found) setUser(found);
+        if (data && (data._id || data.id)) setUser(data);
         else setError('Không tìm thấy user.');
       })
       .catch(() => setError('Lỗi tải thông tin user.'))

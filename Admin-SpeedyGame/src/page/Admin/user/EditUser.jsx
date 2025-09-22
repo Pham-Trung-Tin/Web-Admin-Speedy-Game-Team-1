@@ -31,7 +31,6 @@ const EditUser = ({ userId }) => {
         } catch {}
         throw new Error(msg);
       }
-      // Update the local form state to reflect the change
       setForm(f => ({ ...f, status: "deleted" }));
       setUser(u => ({ ...u, status: "deleted" }));
       alert('User đã được xóa thành công!');
@@ -40,6 +39,41 @@ const EditUser = ({ userId }) => {
       setError(err.message || "Xóa user thất bại");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Gỡ xóa user
+  const [restoring, setRestoring] = useState(false);
+  const handleRestore = async () => {
+    if (!window.confirm('Khôi phục user này?')) return;
+    setRestoring(true);
+    setError(null);
+    const token = localStorage.getItem("access_token");
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/restore`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        let msg = "Khôi phục user thất bại";
+        try {
+          const errJson = await res.json();
+          msg = errJson.message || msg;
+          console.error("API error:", errJson);
+        } catch {}
+        throw new Error(msg);
+      }
+      setForm(f => ({ ...f, status: "active" }));
+      setUser(u => ({ ...u, status: "active" }));
+      alert('Đã khôi phục user thành công!');
+      window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "Users" }));
+    } catch (err) {
+      setError(err.message || "Khôi phục user thất bại");
+    } finally {
+      setRestoring(false);
     }
   };
   const [user, setUser] = useState(null);
@@ -159,8 +193,6 @@ const EditUser = ({ userId }) => {
             >
               <option value="">-- Chọn Level --</option>
               <option value="Nhập Môn">🟢 Nhập Môn</option>
-              <option value="Trung Cấp">🟡 Trung Cấp</option>
-              <option value="Cao Cấp">🔴 Cao Cấp</option>
             </select>
             {error && error.toLowerCase().includes('level') && (
               <div style={{color:'red',marginTop:4,fontSize:13}}>Giá trị level không hợp lệ, vui lòng chọn lại!</div>
@@ -197,10 +229,7 @@ const EditUser = ({ userId }) => {
               <div style={{color:'red',marginTop:4,fontSize:13}}>{error}</div>
             )}
           </div>
-          <div>
-            <label style={{fontWeight:'bold'}}>Total Score:</label>
-            <input name="totalScore" value={form.totalScore || ""} onChange={handleChange} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} />
-          </div>
+          {/* Bỏ Total Score */}
           <div>
             <label style={{fontWeight:'bold'}}>Bio:</label>
             <input name="bio" value={form.bio || ""} onChange={handleChange} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} />
@@ -212,10 +241,7 @@ const EditUser = ({ userId }) => {
               <option value="false">❌ Chưa xác thực</option>
             </select>
           </div>
-          <div>
-            <label style={{fontWeight:'bold'}}>Login Fail:</label>
-            <input name="loginFailCount" value={form.loginFailCount || ""} onChange={handleChange} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} />
-          </div>
+          {/* Bỏ Login Fail */}
           <div>
             <label style={{fontWeight:'bold'}}>Avatar:</label>
             <input name="avatar" value={form.avatar || ""} onChange={handleChange} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} />
@@ -228,9 +254,15 @@ const EditUser = ({ userId }) => {
             >
               {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
-            <button type="button" onClick={handleDelete} disabled={deleting} style={{padding:'10px 32px',fontSize:18,borderRadius:8,border:'none',background:'#f44336',color:'#fff',cursor:'pointer'}}>
-              {deleting ? "Đang xóa..." : "Xóa user"}
-            </button>
+            {user?.status === 'deleted' ? (
+              <button type="button" onClick={handleRestore} disabled={restoring} style={{padding:'10px 32px',fontSize:18,borderRadius:8,border:'none',background:'#4caf50',color:'#fff',cursor:'pointer'}}>
+                {restoring ? "Đang khôi phục..." : "Gỡ xóa user"}
+              </button>
+            ) : (
+              <button type="button" onClick={handleDelete} disabled={deleting} style={{padding:'10px 32px',fontSize:18,borderRadius:8,border:'none',background:'#f44336',color:'#fff',cursor:'pointer'}}>
+                {deleting ? "Đang xóa..." : "Xóa user"}
+              </button>
+            )}
             {success && <span style={{color:'green',marginLeft:16}}>✔️ Đã lưu!</span>}
             {error && <div style={{color:'red',marginTop:16,padding:12,border:'1px solid #f44336',borderRadius:6,background:'#fff5f5'}}>{error}</div>}
             {/* Chỉ giữ báo lỗi email ngay dưới ô nhập email, không hiện dưới nút nữa */}

@@ -5,28 +5,47 @@ import { getUserList, deleteUser } from '../../../services/userService';
 import './UserList.css';
 
 const UserList = () => {
+  // Khôi phục trạng thái nếu có
+  const userListState = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("userListState"));
+    } catch { return null; }
+  })();
   const [usersData, setUsersData] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userError, setUserError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
-  const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [levelFilter, setLevelFilter] = useState("");
+  const [limit, setLimit] = useState(userListState?.limit || 10); // tổng số user muốn xem
+  const LIMIT_OPTIONS = [10, 20, 30, 50, 75, 100];
+  const [currentPage, setCurrentPage] = useState(userListState?.currentPage || 1);
+  const [searchText, setSearchText] = useState(userListState?.searchText || "");
+  const [statusFilter, setStatusFilter] = useState(userListState?.statusFilter || "");
+  const [levelFilter, setLevelFilter] = useState(userListState?.levelFilter || "");
   const navigate = useNavigate();
 
+  // Fetch users with pagination
+  const [totalUsers, setTotalUsers] = useState(0);
   useEffect(() => {
     setLoadingUsers(true);
     setUserError(null);
-    getUserList()
+    getUserList({ page: 1, limit })
       .then(data => {
-        setUsersData(Array.isArray(data) ? data : (data?.items || []));
-        setCurrentPage(1);
+        setUsersData(Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []));
+        setTotalUsers(Number(data?.total) || 0);
+        // Nếu có userListState thì giữ nguyên currentPage, nếu không thì về 1
+        if (!userListState) setCurrentPage(1);
       })
       .catch(err => setUserError('Lỗi tải danh sách user'))
       .finally(() => setLoadingUsers(false));
-  }, []);
+    // Xóa state sau khi khôi phục để lần sau không bị giữ lại
+    if (userListState) localStorage.removeItem("userListState");
+  }, [limit]);
 
+  // Tính số trang dựa trên limit, mỗi trang 10 user
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(Math.min(limit, totalUsers) / pageSize));
+  // (Đã khai báo paged sau khi filter ở dưới)
+
+  // Áp dụng filter trước khi phân trang
   let filtered = usersData;
   if (searchText.trim()) {
     const s = searchText.trim().toLowerCase();
@@ -36,14 +55,60 @@ const UserList = () => {
       (u.name && u.name.toLowerCase().includes(s))
     );
   }
+  if (statusFilter) {
+    filtered = filtered.filter(u => {
+      const st = (u.status || '').toLowerCase();
+      if (statusFilter === 'active') return st === 'active' || st === 'đang hoạt động';
+      if (statusFilter === 'banned') return st === 'banned' || st === 'bị cấm';
+      if (statusFilter === 'inactive') return st === 'inactive' || st === 'không hoạt động';
+      if (statusFilter === 'deleted') return st === 'deleted' || st === 'đã xóa';
+      return true;
+    });
+  }
+  if (levelFilter) {
+    filtered = filtered.filter(u => {
+      // Nếu level là số
+      const num = Number(u.level);
+      if (!isNaN(num)) {
+        if (levelFilter === 'Nhập Môn') return num >= 1 && num <= 10;
+        if (levelFilter === 'Trung cấp') return num >= 11 && num <= 30;
+        if (levelFilter === 'Nâng cao') return num >= 31 && num <= 50;
+        if (levelFilter === 'Chuyên gia') return num > 50;
+      }
+      // Nếu level là chuỗi
+      if (typeof u.level === 'string') {
+        if (levelFilter === 'Nhập Môn') return u.level.toLowerCase().includes('nhập môn');
+        if (levelFilter === 'Trung cấp') return u.level.toLowerCase().includes('trung cấp');
+        if (levelFilter === 'Nâng cao') return u.level.toLowerCase().includes('nâng cao');
+        if (levelFilter === 'Chuyên gia') return u.level.toLowerCase().includes('chuyên gia');
+      }
+      return false;
+    });
+  }
+  // Sau khi filter, phân trang
+  const paged = Array.isArray(filtered)
+    ? filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : [];
+
+  // Lưu trạng thái filter, trang, limit khi chuyển tab
+  const saveUserListState = (user) => {
+    localStorage.setItem("selectedUserId", user._id || user.id);
+    localStorage.setItem("userListState", JSON.stringify({
+      currentPage,
+      limit,
+      searchText,
+      statusFilter,
+      levelFilter
+    }));
+  };
 
   const handleViewUser = (user) => {
-    localStorage.setItem("selectedUserId", user._id || user.id);
+    saveUserListState(user);
     window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "UserDetails" }));
   };
 
   const handleEditUser = (user) => {
-    localStorage.setItem("selectedUserId", user._id || user.id);
+    saveUserListState(user);
     window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "EditUser" }));
   };
 
@@ -98,8 +163,8 @@ const UserList = () => {
       return false;
     });
   }
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Hiển thị đúng trang hiện tại
+  // (Đã khai báo paged ở trên, không cần lại ở đây)
 
   return (
     <div className="user-list-wrapper">
@@ -133,6 +198,19 @@ const UserList = () => {
           <option value="Nâng cao">Nâng cao (31-50)</option>
           <option value="Chuyên gia">Chuyên gia (50+)</option>
         </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontWeight: 500, color: '#374151' }}>Xem:</span>
+          <select
+            className="filter-select"
+            value={limit}
+            onChange={e => setLimit(Number(e.target.value))}
+            style={{ minWidth: 80, fontWeight: 500 }}
+          >
+            {LIMIT_OPTIONS.map(n => (
+              <option key={n} value={n}>{n} User </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loadingUsers ? (
@@ -141,7 +219,7 @@ const UserList = () => {
         </div>
       ) : userError ? (
         <div className="error-message">{userError}</div>
-      ) : filtered.length > 0 ? (
+  ) : paged.length > 0 ? (
         <>
           <div className="data-table-wrapper">
             <table className="data-table">
@@ -236,7 +314,7 @@ const UserList = () => {
                           className="btn-action danger"
                           title="Chặn/Gỡ chặn user"
                           onClick={() => {
-                            localStorage.setItem("selectedUserId", user._id || user.id);
+                            saveUserListState(user);
                             window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "BanUser" }));
                           }}
                         >
@@ -257,7 +335,7 @@ const UserList = () => {
               ← Trước
             </button>
             <span>
-              Trang {currentPage} / {totalPages}
+              Trang {currentPage} / {totalPages} &nbsp;|&nbsp; Tổng: {Math.min(limit, totalUsers)} user
             </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(p+1, totalPages))}
