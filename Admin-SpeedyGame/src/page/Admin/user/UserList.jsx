@@ -5,7 +5,7 @@ import { getUserList, deleteUser } from '../../../services/userService';
 import './UserList.css';
 
 const UserList = () => {
-  // Khôi phục trạng thái nếu có
+  // Khôi phục trạng thái nếu có (bỏ limit)
   const userListState = (() => {
     try {
       return JSON.parse(localStorage.getItem("userListState"));
@@ -14,8 +14,7 @@ const UserList = () => {
   const [usersData, setUsersData] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userError, setUserError] = useState(null);
-  const [limit, setLimit] = useState(userListState?.limit || 10); // tổng số user muốn xem
-  const LIMIT_OPTIONS = [10, 20, 30, 50, 75, 100];
+  // Bỏ limit, fetch tất cả user
   const [currentPage, setCurrentPage] = useState(userListState?.currentPage || 1);
   const [searchText, setSearchText] = useState(userListState?.searchText || "");
   const [statusFilter, setStatusFilter] = useState(userListState?.statusFilter || "");
@@ -27,7 +26,7 @@ const UserList = () => {
   useEffect(() => {
     setLoadingUsers(true);
     setUserError(null);
-    getUserList({ page: 1, limit })
+    getUserList({ page: 1, limit: 1000 }) // Fetch tất cả user (limit cao)
       .then(data => {
         setUsersData(Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []));
         setTotalUsers(Number(data?.total) || 0);
@@ -38,7 +37,7 @@ const UserList = () => {
       .finally(() => setLoadingUsers(false));
     // Xóa state sau khi khôi phục để lần sau không bị giữ lại
     if (userListState) localStorage.removeItem("userListState");
-  }, [limit]);
+  }, []);
 
 
   // Áp dụng filter trước khi phân trang
@@ -95,7 +94,6 @@ const UserList = () => {
     localStorage.setItem("selectedUserId", user._id || user.id);
     localStorage.setItem("userListState", JSON.stringify({
       currentPage,
-      limit,
       searchText,
       statusFilter,
       levelFilter
@@ -197,19 +195,7 @@ const UserList = () => {
           <option value="Nâng cao">Nâng cao (31-50)</option>
           <option value="Chuyên gia">Chuyên gia (50+)</option>
         </select>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontWeight: 500, color: '#374151' }}>Limit:</span>
-          <select
-            className="filter-select"
-            value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
-            style={{ minWidth: 80, fontWeight: 500 }}
-          >
-            {LIMIT_OPTIONS.map(n => (
-              <option key={n} value={n}>{n} User </option>
-            ))}
-          </select>
-        </div>
+
       </div>
 
       {loadingUsers ? (
