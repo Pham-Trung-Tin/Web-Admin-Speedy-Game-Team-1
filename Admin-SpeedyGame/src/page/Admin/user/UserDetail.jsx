@@ -1,25 +1,38 @@
 
 import { useEffect, useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const UserDetail = ({ userId }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!userId) return;
+    // Lấy userId từ props hoặc localStorage
+    const actualUserId = userId || localStorage.getItem("selectedUserId");
+    if (!actualUserId) {
+      setError('Không tìm thấy ID user');
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     const token = localStorage.getItem("access_token");
-  fetch(`/api/admin/users/${userId}`, {
+    fetch(`${API_BASE_URL}/admin/users/${actualUserId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(res => {
-        if (!res.ok) throw new Error('Unauthorized');
+        if (!res.ok) {
+          if (res.status === 401) throw new Error('Unauthorized - Vui lòng đăng nhập lại');
+          if (res.status === 404) throw new Error('Không tìm thấy user');
+          throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+        }
         return res.json();
       })
       .then(data => setUser(data))
-      .catch(() => setError('Không thể tải thông tin user'))
+      .catch(err => setError(err.message || 'Không thể tải thông tin user'))
       .finally(() => setLoading(false));
   }, [userId]);
 

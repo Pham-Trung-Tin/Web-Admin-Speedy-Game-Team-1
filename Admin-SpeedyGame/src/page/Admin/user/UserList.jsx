@@ -55,36 +55,6 @@ const UserList = () => {
       (u.name && u.name.toLowerCase().includes(s))
     );
   }
-  if (statusFilter) {
-    filtered = filtered.filter(u => {
-      const st = (u.status || '').toLowerCase();
-      if (statusFilter === 'active') return st === 'active' || st === 'đang hoạt động';
-      if (statusFilter === 'banned') return st === 'banned' || st === 'bị cấm';
-      if (statusFilter === 'inactive') return st === 'inactive' || st === 'không hoạt động';
-      if (statusFilter === 'deleted') return st === 'deleted' || st === 'đã xóa';
-      return true;
-    });
-  }
-  if (levelFilter) {
-    filtered = filtered.filter(u => {
-      // Nếu level là số
-      const num = Number(u.level);
-      if (!isNaN(num)) {
-        if (levelFilter === 'Nhập Môn') return num >= 1 && num <= 10;
-        if (levelFilter === 'Trung cấp') return num >= 11 && num <= 30;
-        if (levelFilter === 'Nâng cao') return num >= 31 && num <= 50;
-        if (levelFilter === 'Chuyên gia') return num > 50;
-      }
-      // Nếu level là chuỗi
-      if (typeof u.level === 'string') {
-        if (levelFilter === 'Nhập Môn') return u.level.toLowerCase().includes('nhập môn');
-        if (levelFilter === 'Trung cấp') return u.level.toLowerCase().includes('trung cấp');
-        if (levelFilter === 'Nâng cao') return u.level.toLowerCase().includes('nâng cao');
-        if (levelFilter === 'Chuyên gia') return u.level.toLowerCase().includes('chuyên gia');
-      }
-      return false;
-    });
-  }
   // Sau khi filter, phân trang
   const paged = Array.isArray(filtered)
     ? filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -132,39 +102,6 @@ const UserList = () => {
       }
     }
   };
-
-  if (statusFilter) {
-    filtered = filtered.filter(u => {
-      const st = (u.status || '').toLowerCase();
-      if (statusFilter === 'active') return st === 'active' || st === 'đang hoạt động';
-      if (statusFilter === 'banned') return st === 'banned' || st === 'bị cấm';
-      if (statusFilter === 'inactive') return st === 'inactive' || st === 'không hoạt động';
-      if (statusFilter === 'deleted') return st === 'deleted' || st === 'đã xóa';
-      return true;
-    });
-  }
-  if (levelFilter) {
-    filtered = filtered.filter(u => {
-      // Nếu level là số
-      const num = Number(u.level);
-      if (!isNaN(num)) {
-        if (levelFilter === 'Nhập Môn') return num >= 1 && num <= 10;
-        if (levelFilter === 'Trung cấp') return num >= 11 && num <= 30;
-        if (levelFilter === 'Nâng cao') return num >= 31 && num <= 50;
-        if (levelFilter === 'Chuyên gia') return num > 50;
-      }
-      // Nếu level là chuỗi
-      if (typeof u.level === 'string') {
-        if (levelFilter === 'Nhập Môn') return u.level.toLowerCase().includes('nhập môn');
-        if (levelFilter === 'Trung cấp') return u.level.toLowerCase().includes('trung cấp');
-        if (levelFilter === 'Nâng cao') return u.level.toLowerCase().includes('nâng cao');
-        if (levelFilter === 'Chuyên gia') return u.level.toLowerCase().includes('chuyên gia');
-      }
-      return false;
-    });
-  }
-  // Hiển thị đúng trang hiện tại
-  // (Đã khai báo paged ở trên, không cần lại ở đây)
 
   return (
     <div className="user-list-wrapper">
