@@ -25,7 +25,9 @@ const getUserRoles = () => {
       const p = JSON.parse(raw);
       return p.role || p.roles || [];
     }
-  } catch {}
+  } catch {
+    // ignore
+  }
 
   const rawGlobal =
     (typeof window !== "undefined" &&
@@ -92,7 +94,7 @@ const getAccessToken = () => {
       return obj?.access_token || obj?.accessToken || obj?.token || null;
     }
   } catch (e) {
-    // ignore parse errors
+    console.warn("Error parsing authData from localStorage", e);
   }
   return null;
 };
@@ -559,36 +561,36 @@ const Admin = () => {
   ];
 
   // Recent activities vẫn dùng mock, bạn có thể fetch thêm nếu muốn
-  const recentActivitiesMock = [
-    {
-      id: 1,
-      type: "room",
-      message: 'New room "Speed Championship" created',
-      time: "5 min ago",
-      user: "Admin",
-    },
-    {
-      id: 2,
-      type: "user",
-      message: 'User "SpeedMaster99" joined the platform',
-      time: "12 min ago",
-      user: "System",
-    },
-    {
-      id: 3,
-      type: "session",
-      message: "Game session #1429 completed",
-      time: "18 min ago",
-      user: "System",
-    },
-    {
-      id: 4,
-      type: "leaderboard",
-      message: "New weekly champion: FastClicker",
-      time: "25 min ago",
-      user: "System",
-    },
-  ];
+  // const recentActivitiesMock = [
+  //   {
+  //     id: 1,
+  //     type: "room",
+  //     message: 'New room "Speed Championship" created',
+  //     time: "5 min ago",
+  //     user: "Admin",
+  //   },
+  //   {
+  //     id: 2,
+  //     type: "user",
+  //     message: 'User "SpeedMaster99" joined the platform',
+  //     time: "12 min ago",
+  //     user: "System",
+  //   },
+  //   {
+  //     id: 3,
+  //     type: "session",
+  //     message: "Game session #1429 completed",
+  //     time: "18 min ago",
+  //     user: "System",
+  //   },
+  //   {
+  //     id: 4,
+  //     type: "leaderboard",
+  //     message: "New weekly champion: FastClicker",
+  //     time: "25 min ago",
+  //     user: "System",
+  //   },
+  // ];
 
   // Render functions for different sections
   const renderDashboard = () => (
@@ -633,7 +635,7 @@ const Admin = () => {
           </div>
           <div className="chart-placeholder">
             <div className="bar-chart">
-              {userTrends.map((item, idx) => (
+              {userTrends.map((item) => (
                 <div
                   key={item.day}
                   className="bar"
