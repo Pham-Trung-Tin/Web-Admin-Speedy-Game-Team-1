@@ -770,7 +770,7 @@ const Admin = () => {
       <div className="recent-activities">
         <div className="activity-header">
           <h3>Recent Activities</h3>
-          <button className="btn-link">View All</button>
+          {/* <button className="btn-link">View All</button> */}
         </div>
         <div className="activity-list">
           {recentActivities.length > 0 ? (
