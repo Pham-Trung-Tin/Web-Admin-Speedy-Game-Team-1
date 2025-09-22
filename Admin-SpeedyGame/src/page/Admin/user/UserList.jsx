@@ -40,10 +40,6 @@ const UserList = () => {
     if (userListState) localStorage.removeItem("userListState");
   }, [limit]);
 
-  // Tính số trang dựa trên limit, mỗi trang 10 user
-  const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(Math.min(limit, totalUsers) / pageSize));
-  // (Đã khai báo paged sau khi filter ở dưới)
 
   // Áp dụng filter trước khi phân trang
   let filtered = usersData;
@@ -85,6 +81,10 @@ const UserList = () => {
       return false;
     });
   }
+
+  // Tính số trang dựa trên số user đã lọc, mỗi trang 10 user
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   // Sau khi filter, phân trang
   const paged = Array.isArray(filtered)
     ? filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -172,7 +172,7 @@ const UserList = () => {
         <input
           type="text"
           className="filter-input"
-          placeholder="Tìm kiếm theo tên, email..."
+          placeholder="Find by name , email..."
           value={searchText}
           onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
         />
@@ -181,25 +181,24 @@ const UserList = () => {
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
         >
-          <option value="">Tất cả trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="banned">Bị cấm</option>
-          <option value="inactive">Không hoạt động</option>
-          <option value="deleted">Đã xóa</option>
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="banned">Banned</option>
+          <option value="deleted">Deleted</option>
         </select>
         <select
           className="filter-select"
           value={levelFilter}
           onChange={e => { setLevelFilter(e.target.value); setCurrentPage(1); }}
         >
-          <option value="">Tất cả cấp độ</option>
+          <option value="">All Level</option>
           <option value="Nhập Môn">Nhập Môn (1-10)</option>
           <option value="Trung cấp">Trung cấp (11-30)</option>
           <option value="Nâng cao">Nâng cao (31-50)</option>
           <option value="Chuyên gia">Chuyên gia (50+)</option>
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontWeight: 500, color: '#374151' }}>Xem:</span>
+          <span style={{ fontWeight: 500, color: '#374151' }}>Limit:</span>
           <select
             className="filter-select"
             value={limit}
@@ -335,7 +334,7 @@ const UserList = () => {
               ← Trước
             </button>
             <span>
-              Trang {currentPage} / {totalPages} &nbsp;|&nbsp; Tổng: {Math.min(limit, totalUsers)} user
+              Trang {currentPage} / {totalPages} &nbsp;|&nbsp; Tổng: {filtered.length} user
             </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(p+1, totalPages))}

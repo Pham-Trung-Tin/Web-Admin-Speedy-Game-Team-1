@@ -29,11 +29,11 @@ export default function CreateUser({ onSuccess }) {
     setSuccess('')
     try {
       await createUser(form)
-      setSuccess('Tạo user thành công!')
+      setSuccess('Create user success!')
       setForm(initialState)
       if (onSuccess) onSuccess()
     } catch (err) {
-      setError(err.message || 'Tạo user thất bại')
+      setError(err.message || 'Create user failed!')
     } finally {
       setLoading(false)
     }
@@ -46,15 +46,15 @@ export default function CreateUser({ onSuccess }) {
         <form onSubmit={handleSubmit} className="create-user-form" autoComplete="off">
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Username</label>
-            <input name="username" value={form.username} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Nhập tên đăng nhập (bắt buộc)" />
+            <input name="username" value={form.username} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Enter Username (required)" />
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Email</label>
-            <input name="email" type="email" value={form.email} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Nhập email hợp lệ (bắt buộc)" />
+            <input name="email" type="email" value={form.email} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Enter Email (required)" />
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Password</label>
-            <input name="password" type="password" value={form.password} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Nhập mật khẩu (bắt buộc)" />
+            <input name="password" type="password" value={form.password} onChange={handleChange} required className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Enter Password (required)" />
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Roles</label>
@@ -66,7 +66,7 @@ export default function CreateUser({ onSuccess }) {
               style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}}
               required
             >
-              <option value="">-- Chọn Role --</option>
+              <option value="">-- Select Role --</option>
               <option value="user">👤 User</option>
               <option value="staff">🧑‍💼 Staff</option>
             </select>
@@ -74,20 +74,20 @@ export default function CreateUser({ onSuccess }) {
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Level</label>
             <select name="level" value={form.level} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}}>
-              <option value="">Chọn cấp độ...</option>
+              <option value="">Select Level</option>
               <option value="Nhập Môn">Nhập Môn (1-10)</option>
             </select>
           </div>
           <div className="form-group" style={{marginBottom:16}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Avatar URL</label>
-            <input name="avatar" value={form.avatar} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Link ảnh đại diện (tùy chọn)" />
+            <input name="avatar" value={form.avatar} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Link Avatar (Optional)" />
           </div>
           <div className="form-group" style={{marginBottom:24}}>
             <label style={{fontWeight:500,marginBottom:4,display:'block',color:'#111'}}>Bio</label>
-            <input name="bio" value={form.bio} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Giới thiệu bản thân (tùy chọn)" />
+            <input name="bio" value={form.bio} onChange={handleChange} className="input" style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc'}} placeholder="Introduction (Optional)" />
           </div>
           <button type="submit" disabled={loading} style={{width:'100%',padding:10,borderRadius:6,background:'#3b82f6',color:'#fff',fontWeight:600,fontSize:16,border:'none',boxShadow:'0 1px 4px #0001',cursor:loading?'not-allowed':'pointer',transition:'background 0.2s'}}>
-            {loading ? 'Đang tạo...' : 'Tạo user'}
+            {loading ? 'Creating...' : 'Create'}
           </button>
           {error && <div style={{color:'red',marginTop:12,textAlign:'center'}}>{error}</div>}
           {success && <div style={{color:'green',marginTop:12,textAlign:'center'}}>{success}</div>}
