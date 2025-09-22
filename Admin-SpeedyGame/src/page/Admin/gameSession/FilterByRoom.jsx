@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import SessionTable from "../../components/SessionTable";
-import { getSessionsByRoomWithParams } from "../../services/sessionService";
+import SessionTable from "../../../components/SessionTable";
+import { getSessionsByRoomWithParams } from "../../../services/sessionService";
 
 const FilterByRoom = () => {
   // State cho form inputs

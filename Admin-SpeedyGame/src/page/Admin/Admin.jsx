@@ -9,10 +9,11 @@ import CreateRoom from "./gameRooms/CreateRoom";
 import RoomDetail from "./gameRooms/RoomDetail";
 import ListRooms from "./gameRooms/ListRooms";
 import PublicRooms from "./gameRooms/PublicRooms";
-import FilterByRoom from "../gameSession/FilterByRoom";
-import FilterByPlayer from "../gameSession/FilterByPlayer";
+import FilterByRoom from "./gameSession/FilterByRoom";
+import FilterByPlayer from "./gameSession/FilterByPlayer";
 import "./Admin.css";
-import ListSessions from "../gameSession/ListSessions";
+import ListSessions from "./gameSession/ListSessions";
+import SessionDetail from "./gameSession/SessionDetail";
 import UserDetail from "./user/UserDetail";
 import EditUser from "./user/EditUser";
 import BanUser from "./user/BanUser";
@@ -813,6 +814,8 @@ const Admin = () => {
 
   const renderGameSessions = () => <ListSessions />;
 
+  const renderSessionDetails = () => <SessionDetail sessionId={localStorage.getItem("selectedSessionId")} />;
+
   const renderUsers = () => <UserList />;
 
   const renderAllTimeLeaders = () => <AdminLeaderBoard />;
@@ -911,6 +914,7 @@ const Admin = () => {
           {activeTab === "CreateRoom" && renderCreateRoom()}
           {activeTab === "RoomDetails" && renderRoomDetails()}
           {activeTab === "GameSessions" && renderGameSessions()}
+          {activeTab === "SessionDetails" && renderSessionDetails()}
           {activeTab === "SessionsByRoom" && <FilterByRoom />}
           {activeTab === "SessionsByPlayer" && <FilterByPlayer />}
           {activeTab === "Users" && renderUsers()}
@@ -931,6 +935,7 @@ const Admin = () => {
               "CreateRoom",
               "RoomDetails",
               "GameSessions",
+              "SessionDetails",
               "SessionsByRoom",
               "SessionsByPlayer",
               "Users",

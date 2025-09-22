@@ -58,11 +58,13 @@ export const getSessions = async (params = {}, config = {}) => {
 };
 
 export const getSessionById = async (id) => {
-  const res = await api.get(`/sessions/${id}`);
+  const res = await api.get(`/game-sessions/${id}`);
+  console.log("Raw response from getSessionById at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", res.data);
   const session = res.data;
   if (session && !session.name) {
     session.name = session.roomCode || "Unnamed";
   }
+  console.log("Processed session from getSessionById at", new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }), ":", session);
   return session;
 };
 

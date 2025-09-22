@@ -44,13 +44,20 @@ const SessionTable = ({ sessions }) => {
     }
   };
 
+  const handleRowClick = (sessionId) => {
+    // Store the selected session ID
+    localStorage.setItem("selectedSessionId", sessionId);
+    // Trigger tab change to SessionDetails
+    window.dispatchEvent(new CustomEvent("changeAdminTab", { detail: "SessionDetails" }));
+  };
+
   return (
     <div className="overflow-x-auto rounded-lg shadow-lg">
       <table className="min-w-full bg-white border session-table">
         <thead>
           <tr>
             <th className="px-4 py-3 border-b">#</th>
-            <th className="px-4 py-3 border-b">Session Name</th>
+            <th className="px-4 py-3 border-b">Session ID</th>
             <th className="px-4 py-3 border-b">Room Code</th>
             <th className="px-4 py-3 border-b">Host Player</th>
             <th className="px-4 py-3 border-b">Status</th>
@@ -66,10 +73,17 @@ const SessionTable = ({ sessions }) => {
             const claimResult = claimResults[session._id];
             
             return (
-              <tr key={session._id || idx} className="hover:bg-gray-50 transition-colors">
+              <tr 
+                key={session._id || idx} 
+                className="hover:bg-gray-50 transition-colors session-row"
+                onClick={() => handleRowClick(session._id)}
+                style={{ cursor: 'pointer' }}
+              >
                 <td className="px-4 py-3 border-b text-center font-medium text-gray-600">{idx + 1}</td>
-                <td className="px-4 py-3 border-b font-medium text-gray-900">
-                  {session.name || session.roomCode || "Unnamed Session"}
+                <td className="px-4 py-3 border-b">
+                  <code className="bg-gray-100 px-2 py-1 rounded text-xs block max-w-xs truncate">
+                    {session._id || "Unknown ID"}
+                  </code>
                 </td>
                 <td className="px-4 py-3 border-b">
                   <code className="bg-gray-100 px-2 py-1 rounded text-sm">
@@ -93,7 +107,10 @@ const SessionTable = ({ sessions }) => {
                 <td className="px-4 py-3 border-b">
                   <div className="actions-cell">
                     <button
-                      onClick={() => handleClaimBonus(session._id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent row click
+                        handleClaimBonus(session._id);
+                      }}
                       disabled={!isCompleted || isClaiming}
                       className={`claim-bonus-btn px-3 py-2 rounded-lg text-sm font-medium transition-all claim-tooltip ${
                         !isCompleted 
