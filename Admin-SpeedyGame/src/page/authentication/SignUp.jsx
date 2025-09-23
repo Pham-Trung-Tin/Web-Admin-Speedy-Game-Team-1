@@ -295,10 +295,10 @@ const SignUp = () => {
         </div>
 
         {/* Admin Dashboard Access */}
-        <div className="admin-access">
+        {/* <div className="admin-access">
           <span className="admin-icon">🔐</span>
           <span>Admin Dashboard Access</span>
-        </div>
+        </div> */}
 
         {/* Footer */}
         <div className="footer">
